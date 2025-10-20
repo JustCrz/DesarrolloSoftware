@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "nombre": "Vestido rojo",
+    "precio": 450,
+    "stock": 3,
+    "color": "Rojo",
+    "tipo": "Vestido",
+    "imagen": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80"
+  },
+  {
+    "id": 2,
+    "nombre": "Blusa blanca",
+    "precio": 250,
+    "stock": 5,
+    "color": "Blanco",
+    "tipo": "Blusa",
+    "imagen": "https://images.unsplash.com/photo-1520975698512-9e3b9d3e8b40?w=800&q=80"
+  },
+  {
+    "id": 3,
+    "nombre": "Falda negra",
+    "precio": 300,
+    "stock": 2,
+    "color": "Negro",
+    "tipo": "Falda",
+    "imagen": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80"
+  }
+]
