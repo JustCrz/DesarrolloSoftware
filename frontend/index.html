@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Marjorie Store</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>👗 Marjorie Store</h1>
+    <p class="tagline">Moda femenina · Estilo moderno</p>
+  </div>
+  <nav id="userArea">
+    <button id="btnInicio" onclick="showLanding()">Inicio</button>
+    <button id="btnPanel" onclick="showAdminPanel()" class="hidden">Panel</button>
+    <button onclick="showCatalog()">Catálogo</button>
+    <button id="btnCart" onclick="mostrarCarrito()" class="hidden">Carrito</button>
+    <button id="btnLogout" onclick="logout()" class="hidden">Cerrar sesión</button>
+  </nav>
+</header>
+
+<main>
+  <!-- Landing -->
+  <section id="landing" class="card center">
+    <h2>Bienvenida a Marjorie Store</h2>
+    <p>Ropa femenina, elegante y actual.</p>
+    <div class="actions">
+      <button onclick="showLogin()">Iniciar sesión</button>
+      <button class="secondary" onclick="showRegister()">Registrarse</button>
+    </div>
+  </section>
+
+  <!-- Login -->
+  <section id="login" class="card modal hidden" aria-hidden="true">
+    <h3>Iniciar sesión</h3>
+    <input id="loginUser" type="email" placeholder="Email" />
+    <input id="loginPass" placeholder="Contraseña" type="password" />
+    <div class="actions">
+      <button onclick="login()">Ingresar</button>
+      <button class="secondary" onclick="showLanding()">Cancelar</button>
+    </div>
+    <p id="loginMsg" class="error"></p>
+  </section>
+
+  <!-- Register -->
+  <section id="register" class="card modal hidden" aria-hidden="true">
+    <h3>Registrarse</h3>
+    <input id="regUser" placeholder="Nombre" />
+    <input id="regEmail" type="email" placeholder="Email" />
+    <input id="regPass" placeholder="Contraseña" type="password" />
+    <div class="actions">
+      <button onclick="register()">Registrar</button>
+      <button class="secondary" onclick="showLanding()">Cancelar</button>
+    </div>
+    <p id="regMsg" class="success"></p>
+  </section>
+
+  <!-- Catalogo (cliente view) -->
+  <section id="catalog" class="grid hidden"></section>
+
+  <!-- Product detail modal -->
+  <section id="productDetail" class="card modal hidden" aria-hidden="true"></section>
+
+  <!-- Carrito (cliente) -->
+  <section id="cart" class="card hidden">
+    <h3>Tu carrito</h3>
+    <div id="cartContents"></div>
+    <div id="cartFooter" class="cart-footer"></div>
+  </section>
+
+  <!-- Admin panel -->
+  <section id="adminPanel" class="card hidden">
+    <h2>Panel administrador</h2>
+    <div class="admin-inner">
+      <!-- Left column: navigation -->
+      <aside class="admin-nav">
+        <button onclick="showAdminSection('inventario')">Gestionar Inventario</button>
+        <button onclick="showAdminSection('proveedores')">Control Proveedores</button>
+        <button onclick="showAdminSection('catalogo')">Control Catálogo</button>
+        <button onclick="showAdminSection('corte')">Corte de Caja</button>
+        <button onclick="showAdminSection('pagos')">Gestionar pagos</button>
+      </aside>
+      <!-- Right column: sections -->
+      <div class="admin-content">
+        <!-- Inventario -->
+        <div id="adminInventario" class="adminSection hidden">
+          <h3>Gestionar Inventario</h3>
+          <form id="formProducto">
+            <input id="nombre" placeholder="Nombre producto" required />
+            <input id="precio" placeholder="Precio" type="number" required />
+            <input id="stock" placeholder="Stock" type="number" required />
+            <input id="color" placeholder="Color" />
+            <input id="tipo" placeholder="Tipo de prenda" />
+            <input id="imagen" placeholder="URL imagen" />
+            <div class="actions">
+              <button type="submit">Agregar / Modificar</button>
+              <button type="button" class="secondary" onclick="renderAdminList()">Cancelar</button>
+            </div>
+          </form>
+          <div id="adminList" class="grid admin-grid"></div>
+        </div>
+
+        <!-- Proveedores -->
+        <div id="adminProveedores" class="adminSection hidden">
+          <h3>Control Proveedores</h3>
+          <form id="formProveedor">
+            <input id="provNombre" placeholder="Nombre proveedor" required />
+            <input id="provTelefono" type="tel" placeholder="Teléfono" required />
+            <input id="provEmail" type="email" placeholder="Email" />
+            <input id="provDireccion" placeholder="Dirección" required />
+            <div class="actions">
+              <button type="submit">Agregar proveedor</button>
+            </div>
+          </form>
+          <div id="listaProveedores" class="list-providers"></div>
+        </div>
+
+        <!-- Catalogo admin -->
+        <div id="adminCatalogo" class="adminSection hidden">
+          <h3>Control Catálogo (visualización pública)</h3>
+          <div id="catalogAdmin" class="grid"></div>
+        </div>
+
+        <!-- Corte -->
+        <div id="adminCorte" class="adminSection hidden">
+          <h3>Corte de caja diario</h3>
+          <p id="totalVentas">Total ventas hoy: $0</p>
+          <div id="ventasDia"></div>
+          <div class="actions">
+            <button onclick="actualizarCorte()">Actualizar</button>
+            <button onclick="realizarCorte()" class="secondary">Realizar corte</button>
+          </div>
+        </div>
+        <!--Pagos-->
+        <div id="adminPagos" class="adminSection hidden">
+          <h3>Gestión de pagos</h3>
+            <div id="pagosLista"></div>
+            <p id="totalPagos">Total de pagos: $0</p>
+            <div class="actions">
+              <button onclick="renderPagos()">Actualizar</button>
+            </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="cartMessage" class="toast"></div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
