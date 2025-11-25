@@ -90,11 +90,12 @@
           <h3>Gestionar Inventario</h3>
           <form id="formProducto">
             <input id="nombre" placeholder="Nombre producto" required />
+            <input id="categoria" placeholder="Categoría" />
+            <input id="talla" placeholder="Talla" />
+            <input id="color" placeholder="Color" />
             <input id="precio" placeholder="Precio" type="number" required />
             <input id="stock" placeholder="Stock" type="number" required />
-            <input id="color" placeholder="Color" />
-            <input id="tipo" placeholder="Tipo de prenda" />
-            <input id="imagen" placeholder="URL imagen" />
+            <input id="imagen" type="file" accept="image/png, image/jpeg" placeholder="Imagen"/>
             <div class="actions">
               <button type="submit">Agregar / Modificar</button>
               <button type="button" class="secondary" onclick="renderAdminList()">Cancelar</button>

@@ -163,6 +163,25 @@ module.exports = swaggerSpec;
  *       201:
  *         description: Producto agregado
  */
+/**
+ * @swagger
+ * /products/{id}:
+ *   delete:
+ *     summary: Eliminar un producto por Id
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Id del producto
+ *     responses:
+ *       200:
+ *         description: Producto eliminado correctamente
+ *       404:
+ *         description: Producto no encontrado
+ */
 
 /**
  * PROVIDERS

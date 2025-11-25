@@ -22,6 +22,8 @@ app.use('/api/pagos', require('./routes/pagos'));
 app.use('/api/corteCaja', require('./routes/corteCaja'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/auth', authRoutes);
+app.use('/uploads', express.static('uploads'));
+
 
 // Ruta raíz
 app.get('/', (req, res) => {

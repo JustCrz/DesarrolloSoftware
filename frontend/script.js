@@ -87,33 +87,43 @@ function logout(){
 
 /* ---------------- Registro ---------------- */
 async function register() {
-  const correo = el('regEmail').value.trim();
-  const contraseña = el('regPass').value;
-  const nombre = el('regUser').value.trim();
+  const NombreC = el('regUser').value.trim();
+  const Correo = el('regEmail').value.trim();
+  const Contraseña = el('regPass').value;
   try {
-    const res = await fetch(`${API_BASE}/auth/register`, {
+    const res = await fetch(`${API_BASE}/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo, contraseña, nombre })
+      body: JSON.stringify({ NombreC, Correo, Contraseña })
     });
     const data = await res.json();
     el('regMsg').textContent = data.message;
-    if (data.ok) setTimeout(showLogin, 1000);
+    if (data.ok) {
+      setTimeout(showLogin, 1000);
+    }
   } catch (err) {
     el('regMsg').textContent = 'Error de conexión con el servidor';
     console.error(err);
   }
 }
 
+
 /* ---------------- Productos (Cliente) ---------------- */
 async function cargarProductos(){
   try {
     const res = await fetch(`${API_BASE}/products`);
-    productos = await res.json();
-    renderCatalog();
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.products)) {
+      productos = data.products;
+    } else if (Array.isArray(data)) {
+      productos = data; // soporte legacy
+    } else {
+      productos = [];
+    }
   } catch (err) {
-    console.error(err);
-    alert('Error al cargar productos');
+    console.warn("Backend no disponible. Mostrando catálogo vacío...");
+    productos = []; // catálogo vacío temporal
+    renderCatalog();
   }
 }
 
@@ -215,35 +225,51 @@ async function finalizarCompra(){
 /* ---------------- Admin: Inventario ---------------- */
 const formProducto = el('formProducto');
 let editingId = null;
+
 formProducto.addEventListener('submit', async e=>{
   e.preventDefault();
-  const Nombre=el('nombre').value.trim();
-  const Precio=parseFloat(el('precio').value);
-  const Stock=parseInt(el('stock').value);
-  const Color=el('color').value.trim();
-  const Tipo=el('tipo').value.trim();
-  const Imagen=el('imagen').value.trim();
 
-  const producto = { Nombre, Precio, Stock, Color, Tipo, Imagen };
+  const Nombre = el('nombre').value.trim();
+  const Talla = el('talla').value.trim();
+  const Categoria = el('categoria').value.trim();
+  const Stock = parseInt(el('stock').value);
+  const Precio = parseFloat(el('precio').value);
+  const Color = el('color').value.trim();
+  const Imagen = el('imagen').files[0];
+
+  //const producto = { Nombre, Talla, Categoria, Stock, Precio, Color, Imagen };
+  
+  const formData = new FormData();
+  formData.append('Nombre', Nombre);
+  formData.append('Talla', Talla);
+  formData.append('Categoria', Categoria);
+  formData.append('Stock', Stock);
+  formData.append('Precio', Precio);
+  formData.append('Color', Color);
+  if (Imagen) formData.append('Imagen', Imagen);
 
   try {
-    if(editingId){
+    if (editingId) {
+      // Editar producto existente
       await fetch(`${API_BASE}/products/${editingId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(producto)
+        body: formData
+        //credentials: 'include'
       });
     } else {
+      // Crear nuevo producto
       await fetch(`${API_BASE}/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(producto)
+        body: formData
+        //credentials: 'include'
       });
     }
-    editingId=null;
+
+    editingId = null;
     formProducto.reset();
-    cargarProductos();
+    cargarProductos(); // recarga la lista de productos
   } catch (err) {
+    console.error(err);
     alert('Error al guardar producto');
   }
 });
@@ -262,22 +288,42 @@ function renderAdminList(){
 }
 
 function editProducto(id){
-  const p=productos.find(p=>p.id===id);
-  el('nombre').value=p.Nombre; el('precio').value=p.Precio;
-  el('stock').value=p.Stock; el('color').value=p.Color;
-  el('imagen').value=p.Imagen;
-  editingId=id;
+  const p = productos.find(p => p.id === id);
+  el('nombre').value = p.Nombre;
+  el('talla').value = p.Talla;
+  el('categoria').value = p.Categoria;
+  el('stock').value = p.Stock;
+  el('precio').value = p.Precio;
+  el('color').value = p.Color;
+  el('imagen').value = p.Imagen; // si usas file, este valor no se puede asignar directamente
+  editingId = id;
 }
 
 async function deleteProducto(id){
   if(!confirm('¿Eliminar producto?')) return;
+
   try {
-    await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
+    const res = await fetch(`${API_BASE}/products/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'  // importante para mantener la sesión
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      alert('Error al eliminar producto: ' + (data.message || 'Desconocido'));
+      return;
+    }
+
+    // Si todo va bien, recargar productos
     cargarProductos();
+
   } catch (err) {
     alert('Error al eliminar producto');
+    console.error(err);
   }
 }
+
 
 /* ---------------- Admin: Proveedores ---------------- */
 const formProveedor=el('formProveedor');
