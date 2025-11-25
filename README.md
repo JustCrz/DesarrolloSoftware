@@ -2,8 +2,9 @@ Sistema web para una **tienda de ropa femenina**, desarrollado con **Node.js**, 
 Permite manejar usuarios, productos, ventas y un carrito de compras.
 
 Pasos para clonar:
-git clone https://github.com/tuusuario/tienda-ropa.git
+git clone https://github.com/JustCrz/DesarrolloSoftware.git
 cd tienda-ropa/backend
 npm install
+
 Correr el backend/api:
 node server.js
