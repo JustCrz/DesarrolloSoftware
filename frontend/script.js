@@ -90,10 +90,16 @@ async function register() {
   const Correo = el('regEmail').value.trim();
   const Contraseña = el('regPass').value;
   try {
-    const res = await fetch(`${API_BASE}/users`, {
+    const res = await fetch(`${API_BASE}/users/register`, { // <<--- corregido
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ NombreC, Correo, Contraseña })
+      body: JSON.stringify({
+        NombreC,
+        Correo,
+        Contraseña,
+        Telefono: el('regTelefono')?.value || '',
+        Direccion: el('regDireccion')?.value || ''
+      })
     });
     const data = await res.json();
     el('regMsg').textContent = data.message;
@@ -151,7 +157,7 @@ function renderCarrito(){
   if(carrito.length===0){ container.innerHTML='<p>Tu carrito está vacío</p>'; return; }
   let total=0;
   carrito.forEach((item,index)=>{
-    const subtotal=item.Precio*item.Santidad; total+=subtotal;
+    const subtotal=item.Precio*item.Cantidad; total+=subtotal;
     const div=document.createElement('div');
     div.className='cart-item';
     div.innerHTML=`
@@ -172,7 +178,7 @@ function addToCart(id){
   if(p.Stock<qty){ alert('Stock insuficiente'); return; }
   const item=carrito.find(i=>i.id===id);
   if(item) item.Cantidad+=qty; else carrito.push({...p,Cantidad:qty});
-  p.stock-=qty; renderCatalog(); renderCarrito();
+  p.Stock-=qty; renderCatalog(); renderCarrito();
   showToast(`${p.Nombre} agregado (${qty})`);
 }
 
@@ -192,13 +198,16 @@ function eliminarDelCarrito(index){
   carrito.splice(index,1); renderCatalog(); renderCarrito();
 }
 
-async function finalizarCompra(){
-  if(carrito.length===0){ alert('No hay productos en el carrito'); return; }
+async function finalizarCompra() {
+  if (carrito.length === 0) {
+    alert('No hay productos en el carrito');
+    return;
+  }
 
   const venta = {
     usuarioId: loggedUser?.id || 0,
-    total: carrito.reduce((s,i)=>s+i.Precio*i.Cantidad,0),
-    items: carrito.map(i=>({ ProductoId: i.id, Cantidad: i.cantidad }))
+    total: carrito.reduce((sum, i) => sum + i.Precio * i.Cantidad, 0),
+    items: carrito.map(i => ({ ProductoId: i.id, Cantidad: i.Cantidad }))
   };
 
   try {
@@ -208,17 +217,22 @@ async function finalizarCompra(){
       body: JSON.stringify(venta)
     });
 
-    if (res.ok) {
+    const data = await res.json();
+
+    if (res.ok && data.ok) {  // verifica status HTTP y campo ok del JSON
       carrito = [];
-      renderCatalog(); renderCarrito();
+      renderCatalog();
+      renderCarrito();
       showToast('Compra registrada correctamente');
     } else {
-      alert('Error al registrar la compra');
+      alert('Error al registrar la compra: ' + (data.message || 'Desconocido'));
     }
   } catch (err) {
     alert('Error de conexión al registrar compra');
+    console.error(err);
   }
 }
+
 
 /* ---------------- Admin: Inventario ---------------- */
 const formProducto = el('formProducto');
