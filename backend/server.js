@@ -11,7 +11,12 @@ const swaggerDocument = require('./swagger');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://tiendamarjorie.unaux.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
 app.use(express.json()); // importante para leer req.body
 app.use('/uploads', express.static('uploads'));
 
@@ -37,38 +42,6 @@ app.get('/', (req, res) => {
   res.send('Servidor backend funcionando correctamente');
 });
 
-// --- RUTA: Registro de clientes ---
-/*
-app.post('/api/register', async (req, res) => {
-  const { NombreC, Correo, Telefono, Direccion, Contraseña } = req.body;
-
-  // Validación básica
-  if (!NombreC || !Correo || !Telefono || !Direccion || !Contraseña) {
-    return res.status(400).json({ ok: false, message: 'Todos los campos son obligatorios' });
-  }
-
-  try {
-    // Encriptar contraseña
-    const hashedPassword = await bcrypt.hash(Contraseña, 10);
-
-    // Insertar en la tabla cliente
-    const [result] = await pool.query(
-      'INSERT INTO cliente (NombreC, Correo, Telefono, Direccion, Contraseña) VALUES (?, ?, ?, ?, ?)',
-      [NombreC, Correo, Telefono, Direccion, hashedPassword]
-    );
-
-    res.status(201).json({
-      ok: true,
-      message: 'Cliente registrado correctamente',
-      IdCliente: result.insertId
-    });
-
-  } catch (error) {
-    console.error('Error al registrar cliente:', error);
-    res.status(500).json({ ok: false, message: 'Error al registrar cliente' });
-  }
-});
-*/
 // Puerto
 const PORT = 3000;
 app.listen(PORT, () => {
