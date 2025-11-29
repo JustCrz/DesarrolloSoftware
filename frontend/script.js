@@ -1,5 +1,5 @@
 /* ---------------- Configuración ---------------- */
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = 'https://desarrollosoftware.onrender.com';
 
 /* ---------------- Datos locales ---------------- */
 let productos = [];
@@ -41,10 +41,10 @@ async function login() {
   const correo = el('loginUser').value.trim();
   const contraseña = el('loginPass').value;
   try {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo, contraseña })
+      body: JSON.stringify({ Correo: correo, Contraseña: contraseña })
     });
     const data = await res.json();
     if (data.ok) {
@@ -90,7 +90,7 @@ async function register() {
   const Correo = el('regEmail').value.trim();
   const Contraseña = el('regPass').value;
   try {
-    const res = await fetch(`${API_BASE}/users/register`, { // <<--- corregido
+    const res = await fetch(`${API_BASE}/api/users/register`, { // <<--- corregido
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -115,7 +115,7 @@ async function register() {
 /* ---------------- Productos (Cliente) ---------------- */
 async function cargarProductos(){
   try {
-    const res = await fetch(`${API_BASE}/products`);
+    const res = await fetch(`${API_BASE}/api/products`);
     const data = await res.json();
     if (data.ok && Array.isArray(data.products)) {
       productos = data.products;
@@ -211,7 +211,7 @@ async function finalizarCompra() {
   };
 
   try {
-    const res = await fetch(`${API_BASE}/sales`, {
+    const res = await fetch(`${API_BASE}/api/sales`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(venta)
@@ -263,14 +263,14 @@ formProducto.addEventListener('submit', async e=>{
   try {
     if (editingId) {
       // Editar producto existente
-      await fetch(`${API_BASE}/products/${editingId}`, {
+      await fetch(`${API_BASE}/api/products/${editingId}`, {
         method: 'PUT',
         body: formData
         //credentials: 'include'
       });
     } else {
       // Crear nuevo producto
-      await fetch(`${API_BASE}/products`, {
+      await fetch(`${API_BASE}/api/products`, {
         method: 'POST',
         body: formData
         //credentials: 'include'
@@ -315,7 +315,7 @@ async function deleteProducto(id){
   if(!confirm('¿Eliminar producto?')) return;
 
   try {
-    const res = await fetch(`${API_BASE}/products/${id}`, {
+    const res = await fetch(`${API_BASE}/api/products/${id}`, {
       method: 'DELETE',
       credentials: 'include'  // importante para mantener la sesión
     });
@@ -348,7 +348,7 @@ formProveedor.addEventListener('submit', async e=>{
     Direccion: el('provDireccion').value
   };
   try {
-    await fetch(`${API_BASE}/providers`, {
+    await fetch(`${API_BASE}/api/providers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(prov)
@@ -378,7 +378,7 @@ async function renderProveedores(){
 */
 async function renderProveedores(){
   try {
-    const res = await fetch(`${API_BASE}/providers`);
+    const res = await fetch(`${API_BASE}/api/providers`);
     const data = await res.json();
     if(!data.ok){
       alert('Error al cargar proveedores');
@@ -448,7 +448,7 @@ async function renderPagos() {
   totalEl.textContent = 'Total de pagos: $0';
 
   try {
-    const res = await fetch(`${API_BASE}/sales`);
+    const res = await fetch(`${API_BASE}/api/sales`);
     const pagos = await res.json();
 
     if(!Array.isArray(pagos) || pagos.length === 0) {
