@@ -38,6 +38,7 @@ app.get('/', (req, res) => {
 });
 
 // --- RUTA: Registro de clientes ---
+/*
 app.post('/api/register', async (req, res) => {
   const { NombreC, Correo, Telefono, Direccion, Contraseña } = req.body;
 
@@ -67,7 +68,7 @@ app.post('/api/register', async (req, res) => {
     res.status(500).json({ ok: false, message: 'Error al registrar cliente' });
   }
 });
-
+*/
 // Puerto
 const PORT = 3000;
 app.listen(PORT, () => {

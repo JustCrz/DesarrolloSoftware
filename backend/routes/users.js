@@ -5,7 +5,7 @@ const db = require('../bd');
 const bcrypt = require('bcrypt');
 
 // GET todos los usuarios (solo para test)
-router.get('/user', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const sql = 'SELECT IdCliente, NombreC, Correo, Telefono, Direccion FROM cliente';
     const [results] = await db.query(sql);
