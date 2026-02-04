@@ -90,7 +90,7 @@ async function register() {
   const Correo = el('regEmail').value.trim();
   const Contraseña = el('regPass').value;
   try {
-    const res = await fetch(`${API_BASE}/api/users/register`, { // <<--- corregido
+    const res = await fetch(`${API_BASE}/api/users/register`, { // Eliminar /register
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Registrar usuario-cliente
+// Registrar usuario-cliente - Quitar register y dejar / solo
 router.post('/register', async (req, res) => {
   try {
     const { NombreC, Correo, Telefono, Direccion, Contraseña } = req.body;
