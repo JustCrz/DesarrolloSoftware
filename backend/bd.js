@@ -6,6 +6,9 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
+  ssl: {
+    ca: process.env.DB_SSL_CA
+  },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -20,4 +23,5 @@ const pool = mysql.createPool({
     console.error('Error al conectar a la DB:', err);
   }
 })();
+
 module.exports = pool;

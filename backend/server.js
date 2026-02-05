@@ -10,7 +10,7 @@ const swaggerDocument = require('./swagger');
 
 const app = express();
 
-// Middleware
+//Middleware
 app.use(cors({
   origin: 'https://tiendamarjorie.unaux.com',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -45,6 +45,4 @@ app.get('/', (req, res) => {
 // Puerto
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`Documentación Swagger en http://localhost:${PORT}/api-docs`);
 });
