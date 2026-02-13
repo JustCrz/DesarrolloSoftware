@@ -13,4 +13,4 @@ node server.js
 La aplicación esta alojada en 3 distintos host siendo:
 -profreehost para el frontend
 -render para el backend
--infinityfree para la bd
+-aiven para la bd

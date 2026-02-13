@@ -51,7 +51,7 @@ module.exports = swaggerSpec;
 
 /**
  * @swagger
- * /users/user:
+ * /users:
  *   get:
  *     summary: Obtener todos los usuarios (solo prueba)
  *     tags: [Users]

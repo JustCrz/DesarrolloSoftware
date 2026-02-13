@@ -8,6 +8,9 @@ const bcrypt = require('bcrypt');
 router.post('/login', async (req, res) => {
   const { correo, contraseña } = req.body;
 
+  console.log(req.body);
+  console.log("correo:", correo);
+
   try {
     const [rows] = await pool.query(
       'SELECT * FROM cliente WHERE Correo = ?',

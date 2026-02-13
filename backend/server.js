@@ -1,4 +1,5 @@
 // backend/server.js
+require('dotenv').config(); //Local
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
@@ -11,8 +12,19 @@ const swaggerDocument = require('./swagger');
 const app = express();
 
 //Middleware
+/*
 app.use(cors({
   origin: 'https://tiendamarjorie.unaux.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+*/
+const allowedOrigin = process.env.NODE_ENV === 'production'
+  ? 'https://tiendamarjorie.unaux.com'
+  : 'http://127.0.0.1:5500';
+
+app.use(cors({
+  origin: allowedOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));

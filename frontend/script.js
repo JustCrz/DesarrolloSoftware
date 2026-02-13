@@ -1,6 +1,6 @@
 /* ---------------- Configuración ---------------- */
-const API_BASE = 'https://desarrollosoftware.onrender.com';
-
+//const API_BASE = 'https://desarrollosoftware.onrender.com';
+const API_BASE = 'http://localhost:3000';
 /* ---------------- Datos locales ---------------- */
 let productos = [];
 let proveedores = [];
@@ -44,7 +44,7 @@ async function login() {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ Correo: correo, Contraseña: contraseña })
+      body: JSON.stringify({ correo, contraseña })
     });
     const data = await res.json();
     if (data.ok) {

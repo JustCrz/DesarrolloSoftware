@@ -44,33 +44,5 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ ok: false, message: 'Error al registrar usuario' });
   }
 });
-/*
-// Iniciar sesión
-router.post('/login', async (req, res) => {
-  const { Correo, Contraseña } = req.body;
-  try {
-    // Buscar usuario por correo
-    const [results] = await db.query('SELECT * FROM cliente WHERE Correo = ?', [Correo]);
-    if (results.length === 0) {
-      return res.status(401).json({ ok: false, message: 'Usuario no encontrado' });
-    }
 
-    const user = results[0];
-
-    // Comparar contraseña con el hash
-    const match = await bcrypt.compare(Contraseña, user.Contraseña);
-    if (!match) {
-      return res.status(401).json({ ok: false, message: 'Contraseña incorrecta' });
-    }
-
-    // No enviar la contraseña al frontend
-    delete user.Contraseña;
-
-    res.json({ ok: true, user });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, message: 'Error al iniciar sesión' });
-  }
-});
-*/
 module.exports = router;
