@@ -82,7 +82,6 @@
         <button onclick="showAdminSection('inventario')">Gestionar Inventario</button>
         <button onclick="showAdminSection('proveedores')">Control Proveedores</button>
         <button onclick="showAdminSection('catalogo')">Control Catálogo</button>
-        <button onclick="showAdminSection('corte')">Corte de Caja</button>
         <button onclick="showAdminSection('pagos')">Gestionar Pagos</button>
       </aside>
 
@@ -127,17 +126,6 @@
         <div id="adminCatalogo" class="adminSection hidden">
           <h3>Control Catálogo (visualización pública)</h3>
           <div id="catalogAdmin" class="grid"></div>
-        </div>
-
-        <!-- Corte -->
-        <div id="adminCorte" class="adminSection hidden">
-          <h3>Corte de caja diario</h3>
-          <p id="totalVentas">Total ventas hoy: $0</p>
-          <div id="ventasDia"></div>
-          <div class="actions">
-            <button onclick="actualizarCorte()">Actualizar</button>
-            <button onclick="realizarCorte()" class="secondary">Realizar corte</button>
-          </div>
         </div>
 
         <!-- Pagos -->

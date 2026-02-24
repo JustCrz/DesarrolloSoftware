@@ -1,6 +1,6 @@
 // backend/addAdmins.js
 const bcrypt = require('bcrypt');
-const pool = require('./bd'); // tu conexión a MySQL desde bd.js
+const pool = require('./bd');
 async function addAdmins() {
   try {
     const admins = [

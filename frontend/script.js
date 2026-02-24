@@ -1,6 +1,6 @@
 /* ---------------- Configuración ---------------- */
-const API_BASE = 'https://desarrollosoftware.onrender.com';
-//const API_BASE = 'http://localhost:3000';
+//const API_BASE = 'https://desarrollosoftware.onrender.com'; // Trabajar con la api en la nube
+const API_BASE = 'http://localhost:3000'; // Trabajar local
 /* ---------------- Datos locales ---------------- */
 let productos = [];
 let proveedores = [];
@@ -59,6 +59,7 @@ async function login() {
   }
 }
 
+//En base al rol del usuario en sesión, ocultar o mostrar correspondientemente
 function afterLogin(){
   el('loginMsg').textContent='';
   el('btnLogout').classList.remove('hidden');
@@ -75,6 +76,7 @@ function afterLogin(){
   }
 }
 
+//Al cerrar sesión, ocultar y mostrar lo necesario
 function logout(){
   loggedUser = null;
   el('btnCart').classList.add('hidden');
@@ -90,7 +92,7 @@ async function register() {
   const Correo = el('regEmail').value.trim();
   const Contraseña = el('regPass').value;
   try {
-    const res = await fetch(`${API_BASE}/api/users/register`, { // Eliminar /register
+    const res = await fetch(`${API_BASE}/api/users/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -233,7 +235,6 @@ async function finalizarCompra() {
   }
 }
 
-
 /* ---------------- Admin: Inventario ---------------- */
 const formProducto = el('formProducto');
 let editingId = null;
@@ -307,7 +308,7 @@ function editProducto(id){
   el('stock').value = p.Stock;
   el('precio').value = p.Precio;
   el('color').value = p.Color;
-  el('imagen').value = p.Imagen; // si usas file, este valor no se puede asignar directamente
+  el('imagen').value = p.Imagen;
   editingId = id;
 }
 
@@ -317,7 +318,7 @@ async function deleteProducto(id){
   try {
     const res = await fetch(`${API_BASE}/api/products/${id}`, {
       method: 'DELETE',
-      credentials: 'include'  // importante para mantener la sesión
+      credentials: 'include'
     });
 
     const data = await res.json();
@@ -327,7 +328,6 @@ async function deleteProducto(id){
       return;
     }
 
-    // Si todo va bien, recargar productos
     cargarProductos();
 
   } catch (err) {
@@ -335,7 +335,6 @@ async function deleteProducto(id){
     console.error(err);
   }
 }
-
 
 /* ---------------- Admin: Proveedores ---------------- */
 const formProveedor=el('formProveedor');
@@ -359,23 +358,7 @@ formProveedor.addEventListener('submit', async e=>{
     alert('Error al guardar proveedor');
   }
 });
-/*
-async function renderProveedores(){
-  try {
-    const res = await fetch(`${API_BASE}/providers`);
-    proveedores = await res.json();
-    const container=el('listaProveedores'); container.innerHTML='';
-    proveedores.forEach(p=>{
-      const div=document.createElement('div');
-      div.innerHTML=`<span>${p.Nombre} | ${p.Telefono} | ${p.Correo} | ${p.Direccion}</span>
-      <button onclick="deleteProveedor(${p.id})">Eliminar</button>`;
-      container.appendChild(div);
-    });
-  } catch (err) {
-    alert('Error al cargar proveedores');
-  }
-}
-*/
+
 async function renderProveedores(){
   try {
     const res = await fetch(`${API_BASE}/api/providers`);
@@ -398,6 +381,7 @@ async function renderProveedores(){
     console.error(err);
   }
 }
+
 async function deleteProveedor(id){
   if(!confirm('¿Eliminar proveedor?')) return;
   try {
@@ -423,24 +407,6 @@ function renderCatalogAdmin(){
   });
 }
 
-/* ---------------- Admin: Corte de caja ---------------- */
-function renderCorte(){
-  const container=el('ventasDia'); container.innerHTML='';
-  const hoy = new Date().toISOString().slice(0,10);
-  const ventasHoy = ventas.filter(v=>v.fecha.slice(0,10)===hoy);
-  let total=0;
-  ventasHoy.forEach(v=>{
-    total+=v.total;
-    const div=document.createElement('div');
-    div.textContent=`${new Date(v.fecha).toLocaleTimeString()} - Total: $${v.total} - Items: ${v.items.length}`;
-    container.appendChild(div);
-  });
-  el('totalVentas').textContent=`Total ventas hoy: $${total}`;
-}
-function actualizarCorte(){ renderCorte(); }
-function realizarCorte(){ alert('Corte de caja realizado para hoy'); ventas=[]; renderCorte(); }
-
-/*------------------ Admin: Pagos realizados --------------------*/
 async function renderPagos() {
   const container = el('pagosLista');
   const totalEl = el('totalPagos');

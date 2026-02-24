@@ -2,8 +2,6 @@
 require('dotenv').config(); //Local
 const express = require('express');
 const cors = require('cors');
-const bcrypt = require('bcrypt');
-const pool = require('./bd'); // Conexión a MySQL
 const authRoutes = require('./routes/auth');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -11,14 +9,6 @@ const swaggerDocument = require('./swagger');
 
 const app = express();
 
-//Middleware
-/*
-app.use(cors({
-  origin: 'https://tiendamarjorie.unaux.com',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
-*/
 const allowedOrigin = process.env.NODE_ENV === 'production'
   ? 'https://tiendamarjorie.unaux.com'
   : 'http://127.0.0.1:5500';
@@ -45,7 +35,6 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/providers', require('./routes/providers'));
 app.use('/api/sales', require('./routes/sales'));
 app.use('/api/pagos', require('./routes/pagos'));
-app.use('/api/corteCaja', require('./routes/corteCaja'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/auth', authRoutes);
 

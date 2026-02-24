@@ -32,7 +32,6 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { IdCliente, productos, Estado } = req.body;
-    // productos = [{ IdProducto, Cantidad }, ...]
 
     // Calcular total
     let total = 0;
