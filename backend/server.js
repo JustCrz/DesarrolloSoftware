@@ -8,7 +8,9 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerDocument = require('./swagger');
 
 const app = express();
-
+/** OrigenCondicion para determinar el ambiente de desarrollo
+ * @type {string}
+ */
 const allowedOrigin = process.env.NODE_ENV === 'production'
   ? 'https://tiendamarjorie.unaux.com'
   : 'http://127.0.0.1:5500';
@@ -29,7 +31,11 @@ const specs = swaggerJsdoc({
 });
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
-// Rutas existentes
+/**
+ * Registra los endpoints de la API y los vincula a sus routers correspondientes.
+ * @param {import('express').Express} appInstance Instancia principal de Express.
+ * @returns {void}
+ */
 app.use('/api/products', require('./routes/products'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/providers', require('./routes/providers'));

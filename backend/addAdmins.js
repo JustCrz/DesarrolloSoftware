@@ -1,6 +1,15 @@
 // backend/addAdmins.js
 const bcrypt = require('bcrypt');
 const pool = require('./bd');
+
+/**
+ * Agrear la cuenta de un admin
+ * @async
+ * @function addAdmin
+ * @param {object} Se genera la lista de correos deseados
+ * @returns {Promise<object>} Resultado de insercion
+ */
+
 async function addAdmins() {
   try {
     const admins = [

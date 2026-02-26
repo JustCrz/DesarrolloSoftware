@@ -344,39 +344,6 @@ module.exports = swaggerSpec;
  */
 
 /**
- * CORTE DE CAJA
- */
-
-/**
- * @swagger
- * tags:
- *   - name: CorteCaja
- *     description: Gestión de corte de caja
- */
-
-/**
- * @swagger
- * /corteCaja:
- *   get:
- *     summary: Obtener ventas del día
- *     tags: [CorteCaja]
- *     responses:
- *       200:
- *         description: Total de ventas del día
- */
-
-/**
- * @swagger
- * /corteCaja:
- *   post:
- *     summary: Realizar corte de caja
- *     tags: [CorteCaja]
- *     responses:
- *       201:
- *         description: Corte de caja registrado
- */
-
-/**
  * PAGOS
  */
 

@@ -2,6 +2,10 @@ const mysql = require('mysql2/promise');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+/**
+ * Pool de conexion hacía MySQL con variables de entorno
+ * @type {import {'mysql2/promise'}.pool}
+ */
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -16,6 +20,11 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
+/**
+ * Verifica la conexion hacia la base de datos
+ * Permitiendo conectarse después de verificar
+ * @returns {Promise<void>}
+ */
 (async () => {
   try {
     const connection = await pool.getConnection();
