@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Marjorie Store</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>👗 Marjorie Store</h1>
+    <p class="tagline">Moda femenina · Estilo moderno</p>
+  </div>
+  <nav id="userArea">
+    <button id="btnInicio" onclick="showLanding()">Inicio</button>
+    <button id="btnPanel" onclick="showAdminPanel()" class="hidden">Panel</button>
+    <button onclick="showCatalog()">Catálogo</button>
+    <button id="btnCart" onclick="mostrarCarrito()" class="hidden">Carrito</button>
+    <button id="btnLogout" onclick="logout()" class="hidden">Cerrar sesión</button>
+  </nav>
+</header>
+
+<main>
+  <section id="landing" class="card center">
+    <h2>Bienvenida a Marjorie Store</h2>
+    <p>Ropa femenina, elegante y actual.</p>
+    <div class="actions">
+      <button onclick="showLogin()">Iniciar sesión</button>
+      <button class="secondary" onclick="showRegister()">Registrarse</button>
+    </div>
+  </section>
+
+  <section id="login" class="card modal hidden">
+    <h3>Iniciar sesión</h3>
+    <input id="loginUser" type="email" placeholder="Email" />
+    <input id="loginPass" placeholder="Contraseña" type="password" />
+    <div class="actions">
+      <button onclick="login()">Ingresar</button>
+      <button class="secondary" onclick="showLanding()">Cancelar</button>
+    </div>
+    <p id="loginMsg" class="error"></p>
+  </section>
+
+  <section id="register" class="card modal hidden">
+    <h3>Registrarse</h3>
+    <input id="regUser" placeholder="Nombre" />
+    <input id="regEmail" type="email" placeholder="Email" />
+    <input id="regTelefono" placeholder="Teléfono" />
+    <input id="regDireccion" placeholder="Dirección" />
+    <input id="regPass" placeholder="Contraseña" type="password" />
+    <div class="actions">
+      <button onclick="register()">Registrar</button>
+      <button class="secondary" onclick="showLanding()">Cancelar</button>
+    </div>
+    <p id="regMsg" class="success"></p>
+  </section>
+
+  <section id="catalog" class="hidden">
+    <div class="card" style="background: var(--accent-soft); margin-bottom: 20px; border: 2px solid var(--accent);">
+        <h3 style="margin: 0 0 10px 0;">👑 Producto Estrella</h3>
+        <div id="infoEstrellaCliente">Cargando producto estrella...</div>
+    </div>
+    <div id="catalogGrid" class="grid"></div>
+  </section>
+
+  <section id="productDetail" class="card modal hidden"></section>
+
+  <section id="cart" class="card hidden">
+    <h3>Tu carrito</h3>
+    <div id="cartContents"></div>
+    <div id="cartFooter" class="cart-footer"></div>
+  </section>
+
+  <section id="adminPanel" class="card hidden">
+    <h2>Panel administrador</h2>
+    <div class="admin-inner">
+      <aside class="admin-nav">
+        <button onclick="showAdminSection('inventario')">Gestionar Inventario</button>
+        <button onclick="showAdminSection('proveedores')">Control Proveedores</button>
+        <button onclick="showAdminSection('catalogo')">Control Catálogo</button>
+        <button onclick="showAdminSection('estadisticas')">Estadísticas</button>
+        <button onclick="showAdminSection('pagos')">Gestionar Pagos</button>
+      </aside>
+
+      <div class="admin-content">
+        <div id="adminInventario" class="adminSection hidden">
+          <h3>Gestionar Inventario</h3>
+          <form id="formProducto">
+            <input id="nombre" placeholder="Nombre producto" required />
+            <input id="categoria" placeholder="Categoría" />
+            <input id="talla" placeholder="Talla" />
+            <input id="color" placeholder="Color" />
+            <input id="precio" placeholder="Precio" type="number" required />
+            <input id="stock" placeholder="Stock" type="number" required />
+            <input id="imagen" type="file" accept="image/*" />
+            <div class="actions">
+              <button type="submit">Guardar Producto</button>
+              <button type="button" class="secondary" onclick="renderAdminList()">Cancelar</button>
+            </div>
+          </form>
+          <div id="adminList" class="grid admin-grid"></div>
+        </div>
+
+        <div id="adminProveedores" class="adminSection hidden">
+          <h3>Control Proveedores</h3>
+          <form id="formProveedor">
+            <input id="provNombre" placeholder="Nombre proveedor" required />
+            <input id="provTelefono" type="tel" placeholder="Teléfono" required />
+            <input id="provEmail" type="email" placeholder="Email" />
+            <input id="provDireccion" placeholder="Dirección" required />
+            <button type="submit">Agregar proveedor</button>
+          </form>
+          <div id="listaProveedores" class="list-providers"></div>
+        </div>
+
+        <div id="adminCatalogo" class="adminSection hidden">
+          <h3>Vista Previa del Catálogo</h3>
+          <div id="catalogAdmin" class="grid"></div>
+        </div>
+
+        <div id="adminEstadisticas" class="adminSection hidden">
+          <h3>📊 Resumen de Rendimiento</h3>
+          
+          <div class="card" style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center;">
+            <label>Filtrar por fecha:</label>
+            <input type="date" id="filtroFechaVenta">
+            <button onclick="filtrarVentas()">Buscar</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <div class="card center">
+                  <h4>💰 Ingresos</h4>
+                  <h2 id="dashIngresosPeriodo">$0</h2>
+              </div>
+              <div class="card center">
+                  <h4>📦 Pedidos</h4>
+                  <h2 id="dashPedidosPeriodo">0</h2>
+              </div>
+          </div>
+
+          <h4>🏆 Producto Más Vendido</h4>
+          <div id="productoEstrellaContenedor" class="card" style="display: flex; align-items: center; gap: 15px; background: #f0f7ff;">
+            <p>Cargando datos...</p>
+          </div>
+
+          <h4>📄 Historial de Ventas</h4>
+          <div id="listaVentasHistorial" class="list-providers"></div>
+        </div>
+
+        <div id="adminPagos" class="adminSection hidden">
+          <h3>Gestión de Pagos</h3>
+          <div id="pagosLista"></div>
+          <p id="totalPagos" style="font-weight: bold; font-size: 1.2rem;"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="cartMessage" class="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
