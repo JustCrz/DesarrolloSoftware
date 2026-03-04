@@ -12,8 +12,10 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000/api',
-        description: 'Servidor local',
+        url: process.env.NODE_ENV === 'production'
+        ? 'https://desarrollosoftware.onrender.com/api'
+        : 'http://localhost:3000/api',
+        description: 'Servidor conectado',
       },
     ],
   },
