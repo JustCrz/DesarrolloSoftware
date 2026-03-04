@@ -5,7 +5,6 @@ const cartController = require('../controllers/cart.controller');
 // Obtener un carro de un cliente
 router.get('/:idCliente', async (req, res) => {
   const idCliente = parseInt(req.params.idCliente);
-
   try {
     const carrito = await cartController.getCartClient(idCliente);
     res.json({ ok: true, carrito });

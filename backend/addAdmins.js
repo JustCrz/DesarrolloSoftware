@@ -1,4 +1,7 @@
 // backend/addAdmins.js
+/**
+ * @module AddAdmin
+ */
 const bcrypt = require('bcrypt');
 const pool = require('./bd');
 

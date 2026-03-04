@@ -26,7 +26,7 @@ async function getAllUsers() {
  */
 async function registerUser(userData) {
   const { NombreC, Correo, Telefono, Direccion, Contraseña } = userData;
-
+  //Busca si el correo dado existe en la base de datos
   const [existing] = await db.query(
     'SELECT * FROM cliente WHERE Correo = ?',
     [Correo]
@@ -35,7 +35,7 @@ async function registerUser(userData) {
   if (existing.length > 0) {
     throw new Error('El correo ya está registrado');
   }
-  
+  //Genera un hash para la contraseña y guardar ese dato
   const saltRounds = 10;
   const hashed = await bcrypt.hash(Contraseña, saltRounds);
 

@@ -44,7 +44,6 @@ router.post('/', upload.single('Imagen'), async (req, res) => {
       req.body,
       req.file ? req.file.filename : null
     );
-
     res.json({
       ok: true,
       message: 'Producto agregado correctamente',
@@ -83,7 +82,6 @@ router.delete('/:id', async (req, res) => {
     if (affectedRows === 0) {
       return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
     }
-
     res.json({ ok: true, message: 'Producto eliminado correctamente' });
   } catch (err) {
     console.error('Error al eliminar producto:', err);

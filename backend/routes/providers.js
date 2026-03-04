@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../bd');
 const providersController = require('../controllers/providers.controller')
 
 // Obtener la lista de proveedores
 router.get('/', async (req, res) => {
   try {
-    const provider = await providersController.getProviders();
-    res.json({ ok: true, provider });
+    const providers = await providersController.getProviders();
+    // Compatibilidad: se mantiene `provider` para clientes legacy.
+    res.json({ ok: true, providers, provider: providers });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, message: 'Error al obtener proveedores' });
@@ -21,6 +21,9 @@ router.post('/', async (req, res) => {
     res.status(201).json({ok: true});
   } catch (err) {
     console.error(err);
+    if (err.message === 'El correo ya está registrado') {
+      return res.status(400).json({ ok: false, message: err.message });
+    }
     res.status(500).json({ ok: false, message: 'Error al agregar proveedor' });
   }
 });

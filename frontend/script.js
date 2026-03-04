@@ -1,6 +1,7 @@
-/* ---------------- Configuración ---------------- */
-//const API_BASE = 'https://desarrollosoftware.onrender.com'; // Trabajar con la api en la nube
+/* ---------------- Configuracion ---------------- */
+// const API_BASE = 'https://desarrollosoftware.onrender.com'; // Trabajar con la api en la nube
 const API_BASE = 'http://localhost:3000'; // Trabajar local
+
 /* ---------------- Datos locales ---------------- */
 let productos = [];
 let proveedores = [];
@@ -12,39 +13,41 @@ let loggedUser = null;
 const el = id => document.getElementById(id);
 const show = id => el(id)?.classList.remove('hidden');
 const hide = id => el(id)?.classList.add('hidden');
+const getProductId = product => product?.IdProducto ?? product?.id;
+const getProductStock = product => Number(product?.Stock ?? product?.stock ?? 0);
 
-/* ---------------- Navegación ---------------- */
-function hideAll(){
-  ['landing','login','register','catalog','productDetail','adminPanel','cart'].forEach(id=>hide(id));
-  document.querySelectorAll('.adminSection').forEach(s=>s.classList.add('hidden'));
+/* ---------------- Navegacion ---------------- */
+function hideAll() {
+  ['landing', 'login', 'register', 'catalog', 'productDetail', 'adminPanel', 'cart'].forEach(id => hide(id));
+  document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
 }
 
-function showLanding(){ hideAll(); show('landing'); }
-function showLogin(){ hideAll(); show('login'); }
-function showRegister(){ hideAll(); show('register'); }
-function showCatalog(){ hideAll(); renderCatalog(); show('catalog'); }
-function showAdminPanel(){ hideAll(); show('adminPanel'); showAdminSection('inventario'); }
+function showLanding() { hideAll(); show('landing'); }
+function showLogin() { hideAll(); show('login'); }
+function showRegister() { hideAll(); show('register'); }
+function showCatalog() { hideAll(); renderCatalog(); show('catalog'); }
+function showAdminPanel() { hideAll(); show('adminPanel'); showAdminSection('inventario'); }
 
-function showAdminSection(section){
-  document.querySelectorAll('.adminSection').forEach(s=>s.classList.add('hidden'));
-  switch(section){
+function showAdminSection(section) {
+  document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
+  switch (section) {
     case 'inventario': show('adminInventario'); renderAdminList(); break;
     case 'proveedores': show('adminProveedores'); renderProveedores(); break;
     case 'catalogo': show('adminCatalogo'); renderCatalogAdmin(); break;
-    case 'corte': show('adminCorte'); renderCorte(); break;
-    case 'pagos': show('adminPagos'); renderPagos(); break
+    case 'corte': show('adminCorte'); if (typeof renderCorte === 'function') renderCorte(); break;
+    case 'pagos': show('adminPagos'); renderPagos(); break;
   }
 }
 
-/* ---------------- Autenticación ---------------- */
+/* ---------------- Autenticacion ---------------- */
 async function login() {
   const correo = el('loginUser').value.trim();
-  const contraseña = el('loginPass').value;
+  const contrasena = el('loginPass').value;
   try {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo, contraseña })
+      body: JSON.stringify({ correo, contrasena, ['contrase\u00f1a']: contrasena })
     });
     const data = await res.json();
     if (data.ok) {
@@ -54,18 +57,17 @@ async function login() {
       el('loginMsg').textContent = data.message;
     }
   } catch (err) {
-    el('loginMsg').textContent = 'Error de conexión con el servidor';
+    el('loginMsg').textContent = 'Error de conexion con el servidor';
     console.error(err);
   }
 }
 
-//En base al rol del usuario en sesión, ocultar o mostrar correspondientemente
-function afterLogin(){
-  el('loginMsg').textContent='';
+function afterLogin() {
+  el('loginMsg').textContent = '';
   el('btnLogout').classList.remove('hidden');
   el('btnInicio').classList.add('hidden');
 
-  if(loggedUser.role==='admin'){
+  if (loggedUser.role === 'admin') {
     el('btnPanel').classList.remove('hidden');
     el('btnCart').classList.add('hidden');
     showAdminPanel();
@@ -76,21 +78,21 @@ function afterLogin(){
   }
 }
 
-//Al cerrar sesión, ocultar y mostrar lo necesario
-function logout(){
+function logout() {
   loggedUser = null;
   el('btnCart').classList.add('hidden');
   el('btnLogout').classList.add('hidden');
   el('btnPanel').classList.add('hidden');
   el('btnInicio').classList.remove('hidden');
-  hideAll(); show('landing');
+  hideAll();
+  show('landing');
 }
 
 /* ---------------- Registro ---------------- */
 async function register() {
   const NombreC = el('regUser').value.trim();
   const Correo = el('regEmail').value.trim();
-  const Contraseña = el('regPass').value;
+  const Contrasena = el('regPass').value;
   try {
     const res = await fetch(`${API_BASE}/api/users/register`, {
       method: 'POST',
@@ -98,7 +100,7 @@ async function register() {
       body: JSON.stringify({
         NombreC,
         Correo,
-        Contraseña,
+        Contrase\u00f1a: Contrasena,
         Telefono: el('regTelefono')?.value || '',
         Direccion: el('regDireccion')?.value || ''
       })
@@ -109,95 +111,132 @@ async function register() {
       setTimeout(showLogin, 1000);
     }
   } catch (err) {
-    el('regMsg').textContent = 'Error de conexión con el servidor';
+    el('regMsg').textContent = 'Error de conexion con el servidor';
     console.error(err);
   }
 }
 
 /* ---------------- Productos (Cliente) ---------------- */
-async function cargarProductos(){
+async function cargarProductos() {
   try {
     const res = await fetch(`${API_BASE}/api/products`);
     const data = await res.json();
     if (data.ok && Array.isArray(data.products)) {
       productos = data.products;
     } else if (Array.isArray(data)) {
-      productos = data; // soporte legacy
+      productos = data;
     } else {
       productos = [];
     }
   } catch (err) {
-    console.warn("Backend no disponible. Mostrando catálogo vacío...");
-    productos = []; // catálogo vacío temporal
+    console.warn('Backend no disponible. Mostrando catalogo vacio...');
+    productos = [];
     renderCatalog();
   }
 }
 
-function renderCatalog(){
-  const container = el('catalog'); container.innerHTML='';
-  productos.forEach(p=>{
-    const card=document.createElement('article');
-    card.className='producto';
-    card.innerHTML=`
+function renderCatalog() {
+  const container = el('catalog');
+  container.innerHTML = '';
+
+  productos.forEach(p => {
+    const productId = getProductId(p);
+    const stock = getProductStock(p);
+
+    const card = document.createElement('article');
+    card.className = 'producto';
+    card.innerHTML = `
       <img src="${p.Imagen}" alt="${p.Nombre}" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
       <h3>${p.Nombre}</h3>
-      <p class="muted">Color: ${p.Color}</p>
+      <p class="muted">Color: ${p.Color || '-'}</p>
       <p><strong>$${p.Precio}</strong></p>
-      <p>Stock: ${p.Stock}</p>
+      <p>Stock: ${stock}</p>
       <div class="meta">
-        ${loggedUser?.role==='cliente' ? `<input id="cantidad_${p.id}" type="number" min="1" max="${p.Stock}" value="${p.Stock>0?1:0}" style="width:60px">
-        <button ${p.Stock===0?'class="agotado" disabled':''} onclick="addToCart(${p.id})">${p.Stock===0?'Agotado':'Agregar'}</button>` : ''}
+        ${loggedUser?.role === 'cliente' ? `<input id="cantidad_${productId}" type="number" min="1" max="${stock}" value="${stock > 0 ? 1 : 0}" style="width:60px">
+        <button ${stock === 0 ? 'class="agotado" disabled' : ''} onclick="addToCart(${productId})">${stock === 0 ? 'Agotado' : 'Agregar'}</button>` : ''}
       </div>`;
     container.appendChild(card);
   });
 }
 
 /* ---------------- Carrito ---------------- */
-function mostrarCarrito(){ hideAll(); show('cart'); renderCarrito(); }
-function renderCarrito(){
-  const container = el('cartContents'); const footer=el('cartFooter'); container.innerHTML=''; footer.innerHTML='';
-  if(carrito.length===0){ container.innerHTML='<p>Tu carrito está vacío</p>'; return; }
-  let total=0;
-  carrito.forEach((item,index)=>{
-    const subtotal=item.Precio*item.Cantidad; total+=subtotal;
-    const div=document.createElement('div');
-    div.className='cart-item';
-    div.innerHTML=`
+function mostrarCarrito() { hideAll(); show('cart'); renderCarrito(); }
+
+function renderCarrito() {
+  const container = el('cartContents');
+  const footer = el('cartFooter');
+  container.innerHTML = '';
+  footer.innerHTML = '';
+
+  if (carrito.length === 0) {
+    container.innerHTML = '<p>Tu carrito esta vacio</p>';
+    return;
+  }
+
+  let total = 0;
+  carrito.forEach((item, index) => {
+    const subtotal = item.Precio * item.Cantidad;
+    total += subtotal;
+    const div = document.createElement('div');
+    div.className = 'cart-item';
+    div.innerHTML = `
       <span><strong>${item.Nombre}</strong> - $${item.Precio}</span>
       <input type="number" min="1" value="${item.Cantidad}" style="width:50px" onchange="updateCantidad(${index},this.value)">
       <span>Subtotal: $${subtotal}</span>
       <button onclick="eliminarDelCarrito(${index})">Eliminar</button>`;
     container.appendChild(div);
   });
-  footer.innerHTML=`<p><strong>Total: $${total}</strong></p>
+
+  footer.innerHTML = `<p><strong>Total: $${total}</strong></p>
     <button onclick="finalizarCompra()">Finalizar Compra</button>`;
 }
 
-function addToCart(id){
-  if(!loggedUser){ alert('Debes iniciar sesión'); return; }
-  const p=productos.find(x=>x.id===id);
-  const qty=parseInt(el(`cantidad_${id}`)?.value || 1);
-  if(p.Stock<qty){ alert('Stock insuficiente'); return; }
-  const item=carrito.find(i=>i.id===id);
-  if(item) item.Cantidad+=qty; else carrito.push({...p,Cantidad:qty});
-  p.Stock-=qty; renderCatalog(); renderCarrito();
+function addToCart(id) {
+  if (!loggedUser) { alert('Debes iniciar sesion'); return; }
+  const p = productos.find(x => getProductId(x) === id);
+  if (!p) { alert('Producto no encontrado'); return; }
+
+  const qty = parseInt(el(`cantidad_${id}`)?.value || 1, 10);
+  if (getProductStock(p) < qty) { alert('Stock insuficiente'); return; }
+
+  const item = carrito.find(i => getProductId(i) === id);
+  if (item) item.Cantidad += qty;
+  else carrito.push({ ...p, Cantidad: qty });
+
+  p.Stock = getProductStock(p) - qty;
+  renderCatalog();
+  renderCarrito();
   showToast(`${p.Nombre} agregado (${qty})`);
 }
 
-function updateCantidad(index,nuevaCantidad){
-  nuevaCantidad=parseInt(nuevaCantidad); if(isNaN(nuevaCantidad)||nuevaCantidad<1) return;
-  const item=carrito[index];
-  const producto=productos.find(p=>p.id===item.id);
-  const diff=nuevaCantidad-item.Cantidad;
-  if(diff>0 && producto.stock<diff){ alert('No hay suficiente stock'); renderCarrito(); return; }
-  item.Cantidad=nuevaCantidad; producto.Stock-=diff; renderCatalog(); renderCarrito();
+function updateCantidad(index, nuevaCantidad) {
+  nuevaCantidad = parseInt(nuevaCantidad, 10);
+  if (isNaN(nuevaCantidad) || nuevaCantidad < 1) return;
+
+  const item = carrito[index];
+  const producto = productos.find(p => getProductId(p) === getProductId(item));
+  if (!producto) return;
+
+  const diff = nuevaCantidad - item.Cantidad;
+  if (diff > 0 && getProductStock(producto) < diff) {
+    alert('No hay suficiente stock');
+    renderCarrito();
+    return;
+  }
+
+  item.Cantidad = nuevaCantidad;
+  producto.Stock = getProductStock(producto) - diff;
+  renderCatalog();
+  renderCarrito();
 }
 
-function eliminarDelCarrito(index){
-  const item=carrito[index];
-  const producto=productos.find(p=>p.id===item.id);
-  if(producto) producto.Stock+=item.Cantidad;
-  carrito.splice(index,1); renderCatalog(); renderCarrito();
+function eliminarDelCarrito(index) {
+  const item = carrito[index];
+  const producto = productos.find(p => getProductId(p) === getProductId(item));
+  if (producto) producto.Stock = getProductStock(producto) + item.Cantidad;
+  carrito.splice(index, 1);
+  renderCatalog();
+  renderCarrito();
 }
 
 async function finalizarCompra() {
@@ -207,9 +246,8 @@ async function finalizarCompra() {
   }
 
   const venta = {
-    usuarioId: loggedUser?.id || 0,
-    total: carrito.reduce((sum, i) => sum + i.Precio * i.Cantidad, 0),
-    items: carrito.map(i => ({ ProductoId: i.id, Cantidad: i.Cantidad }))
+    IdCliente: loggedUser?.id || 0,
+    productos: carrito.map(i => ({ IdProducto: getProductId(i), Cantidad: i.Cantidad }))
   };
 
   try {
@@ -221,8 +259,9 @@ async function finalizarCompra() {
 
     const data = await res.json();
 
-    if (res.ok && data.ok) {  // verifica status HTTP y campo ok del JSON
+    if (res.ok && data.ok) {
       carrito = [];
+      await cargarProductos();
       renderCatalog();
       renderCarrito();
       showToast('Compra registrada correctamente');
@@ -230,7 +269,7 @@ async function finalizarCompra() {
       alert('Error al registrar la compra: ' + (data.message || 'Desconocido'));
     }
   } catch (err) {
-    alert('Error de conexión al registrar compra');
+    alert('Error de conexion al registrar compra');
     console.error(err);
   }
 }
@@ -239,19 +278,17 @@ async function finalizarCompra() {
 const formProducto = el('formProducto');
 let editingId = null;
 
-formProducto.addEventListener('submit', async e=>{
+formProducto.addEventListener('submit', async e => {
   e.preventDefault();
 
   const Nombre = el('nombre').value.trim();
   const Talla = el('talla').value.trim();
   const Categoria = el('categoria').value.trim();
-  const Stock = parseInt(el('stock').value);
+  const Stock = parseInt(el('stock').value, 10);
   const Precio = parseFloat(el('precio').value);
   const Color = el('color').value.trim();
   const Imagen = el('imagen').files[0];
 
-  //const producto = { Nombre, Talla, Categoria, Stock, Precio, Color, Imagen };
-  
   const formData = new FormData();
   formData.append('Nombre', Nombre);
   formData.append('Talla', Talla);
@@ -263,62 +300,61 @@ formProducto.addEventListener('submit', async e=>{
 
   try {
     if (editingId) {
-      // Editar producto existente
       await fetch(`${API_BASE}/api/products/${editingId}`, {
         method: 'PUT',
         body: formData
-        //credentials: 'include'
       });
     } else {
-      // Crear nuevo producto
       await fetch(`${API_BASE}/api/products`, {
         method: 'POST',
         body: formData
-        //credentials: 'include'
       });
     }
 
     editingId = null;
     formProducto.reset();
-    cargarProductos(); // recarga la lista de productos
+    await cargarProductos();
+    renderAdminList();
   } catch (err) {
     console.error(err);
     alert('Error al guardar producto');
   }
 });
 
-function renderAdminList(){
-  const container=el('adminList'); container.innerHTML='';
-  productos.forEach(p=>{
-    const card=document.createElement('div'); card.className='producto';
-    card.innerHTML=`
+function renderAdminList() {
+  const container = el('adminList');
+  container.innerHTML = '';
+  productos.forEach(p => {
+    const productId = getProductId(p);
+    const card = document.createElement('div');
+    card.className = 'producto';
+    card.innerHTML = `
       <h4>${p.Nombre}</h4>
       <p>Stock: ${p.Stock} | $${p.Precio}</p>
-      <button onclick="editProducto(${p.id})">Editar</button>
-      <button onclick="deleteProducto(${p.id})">Eliminar</button>`;
+      <button onclick="editProducto(${productId})">Editar</button>
+      <button onclick="deleteProducto(${productId})">Eliminar</button>`;
     container.appendChild(card);
   });
 }
 
-function editProducto(id){
-  const p = productos.find(p => p.id === id);
+function editProducto(id) {
+  const p = productos.find(prod => getProductId(prod) === id);
+  if (!p) return;
   el('nombre').value = p.Nombre;
   el('talla').value = p.Talla;
   el('categoria').value = p.Categoria;
   el('stock').value = p.Stock;
   el('precio').value = p.Precio;
   el('color').value = p.Color;
-  el('imagen').value = p.Imagen;
   editingId = id;
 }
 
-async function deleteProducto(id){
-  if(!confirm('¿Eliminar producto?')) return;
+async function deleteProducto(id) {
+  if (!confirm('Eliminar producto?')) return;
 
   try {
     const res = await fetch(`${API_BASE}/api/products/${id}`, {
-      method: 'DELETE',
-      credentials: 'include'
+      method: 'DELETE'
     });
 
     const data = await res.json();
@@ -328,8 +364,8 @@ async function deleteProducto(id){
       return;
     }
 
-    cargarProductos();
-
+    await cargarProductos();
+    renderAdminList();
   } catch (err) {
     alert('Error al eliminar producto');
     console.error(err);
@@ -337,10 +373,10 @@ async function deleteProducto(id){
 }
 
 /* ---------------- Admin: Proveedores ---------------- */
-const formProveedor=el('formProveedor');
-formProveedor.addEventListener('submit', async e=>{
+const formProveedor = el('formProveedor');
+formProveedor.addEventListener('submit', async e => {
   e.preventDefault();
-  const prov={
+  const prov = {
     Nombre: el('provNombre').value,
     Telefono: el('provTelefono').value,
     Correo: el('provEmail').value,
@@ -359,15 +395,16 @@ formProveedor.addEventListener('submit', async e=>{
   }
 });
 
-async function renderProveedores(){
+async function renderProveedores() {
   try {
     const res = await fetch(`${API_BASE}/api/providers`);
     const data = await res.json();
-    if(!data.ok){
+    if (!data.ok) {
       alert('Error al cargar proveedores');
       return;
     }
-    proveedores = data.providers;
+
+    proveedores = data.providers || data.provider || [];
     const container = el('listaProveedores');
     container.innerHTML = '';
     proveedores.forEach(p => {
@@ -382,10 +419,10 @@ async function renderProveedores(){
   }
 }
 
-async function deleteProveedor(id){
-  if(!confirm('¿Eliminar proveedor?')) return;
+async function deleteProveedor(id) {
+  if (!confirm('Eliminar proveedor?')) return;
   try {
-    await fetch(`${API_BASE}/providers/${id}`, { method: 'DELETE' });
+    await fetch(`${API_BASE}/api/providers/${id}`, { method: 'DELETE' });
     renderProveedores();
   } catch (err) {
     alert('Error al eliminar proveedor');
@@ -393,16 +430,19 @@ async function deleteProveedor(id){
 }
 
 /* ---------------- Admin: Catalogo ---------------- */
-function renderCatalogAdmin(){
-  const container=el('catalogAdmin'); container.innerHTML='';
-  productos.forEach(p=>{
-    const card=document.createElement('div'); card.className='producto';
-    card.innerHTML=`
+function renderCatalogAdmin() {
+  const container = el('catalogAdmin');
+  container.innerHTML = '';
+  productos.forEach(p => {
+    const productId = getProductId(p);
+    const card = document.createElement('div');
+    card.className = 'producto';
+    card.innerHTML = `
       <img src="${p.Imagen}" alt="${p.Nombre}" style="height:150px;object-fit:cover">
       <h4>${p.Nombre}</h4>
       <p>Stock: ${p.Stock} | $${p.Precio}</p>
-      <button onclick="editProducto(${p.id})">Editar</button>
-      <button onclick="deleteProducto(${p.id})">Eliminar</button>`;
+      <button onclick="editProducto(${productId})">Editar</button>
+      <button onclick="deleteProducto(${productId})">Eliminar</button>`;
     container.appendChild(card);
   });
 }
@@ -414,20 +454,21 @@ async function renderPagos() {
   totalEl.textContent = 'Total de pagos: $0';
 
   try {
-    const res = await fetch(`${API_BASE}/api/sales`);
-    const pagos = await res.json();
+    const res = await fetch(`${API_BASE}/api/pagos`);
+    const data = await res.json();
+    const pagos = data.pagos || [];
 
-    if(!Array.isArray(pagos) || pagos.length === 0) {
+    if (!data.ok || pagos.length === 0) {
       container.innerHTML = '<p>No hay pagos registrados</p>';
       return;
     }
 
     let total = 0;
     pagos.forEach(p => {
-      total += p.total;
+      total += Number(p.Monto || 0);
       const div = document.createElement('div');
       div.className = 'pago-item';
-      div.textContent = `${new Date(p.fecha).toLocaleDateString()} - Usuario: ${p.UsuarioId} - Total: $${p.Total}`;
+      div.textContent = `${new Date(p.Fecha).toLocaleDateString()} - Cliente: ${p.IdCliente} - Monto: $${p.Monto} - Estado: ${p.Estado}`;
       container.appendChild(div);
     });
 
@@ -439,7 +480,12 @@ async function renderPagos() {
 }
 
 /* ---------------- Toast ---------------- */
-function showToast(msg){ const t=el('cartMessage'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2000); }
+function showToast(msg) {
+  const t = el('cartMessage');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
 
 /* ---------------- Init ---------------- */
 cargarProductos();

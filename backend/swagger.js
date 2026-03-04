@@ -20,7 +20,7 @@ const options = {
     ],
   },
   // Rutas donde buscar comentarios de documentación (opcional)
-  apis: ['./routes/*.js'],
+  apis: ['./swagger.js', './routes/*.js'],
 };
 
 // Generar especificación Swagger

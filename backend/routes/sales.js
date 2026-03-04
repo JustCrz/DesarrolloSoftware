@@ -31,21 +31,34 @@ router.get('/', async (req, res) => {
 // Registrar venta
 router.post('/', async (req, res) => {
   try {
-    const { IdCliente, productos, Estado } = req.body;
+    const idCliente = req.body.IdCliente || req.body.usuarioId;
+    const productos = req.body.productos || req.body.items || [];
+    const estado = req.body.Estado;
+
+    if (!idCliente || !Array.isArray(productos) || productos.length === 0) {
+      return res.status(400).json({ ok: false, message: 'Datos de venta incompletos' });
+    }
 
     // Calcular total
     let total = 0;
     for (let p of productos) {
-      const [rows] = await pool.query('SELECT Precio FROM producto WHERE IdProducto = ?', [p.IdProducto]);
+      const idProducto = p.IdProducto || p.ProductoId;
+      const cantidad = p.Cantidad || p.cantidad;
+
+      if (!idProducto || !cantidad) continue;
+
+      const [rows] = await pool.query('SELECT Precio FROM producto WHERE IdProducto = ?', [idProducto]);
       if (rows.length === 0) continue;
-      total += rows[0].Precio * p.Cantidad;
+      total += rows[0].Precio * cantidad;
       p.Precio = rows[0].Precio; // guardar precio actual
+      p.IdProducto = idProducto;
+      p.Cantidad = cantidad;
     }
 
     // Insertar pedido
     const [result] = await pool.query(
       'INSERT INTO pedido (IdCliente, Fecha, Total, Estado) VALUES (?, NOW(), ?, ?)',
-      [IdCliente, total, Estado || 'Pendiente']
+      [idCliente, total, estado || 'Pendiente']
     );
     const IdPedido = result.insertId;
 
@@ -56,7 +69,6 @@ router.post('/', async (req, res) => {
         [IdPedido, p.IdProducto, p.Cantidad]
       );
     }
-
     res.status(201).json({ ok: true, IdPedido, productos });
   } catch (err) {
     console.error(err);

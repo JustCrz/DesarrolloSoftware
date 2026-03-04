@@ -1,11 +1,13 @@
 // backend/server.js
+/**
+ * @module ServerBackend
+ */
 require('dotenv').config(); //Local
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerDocument = require('./swagger');
+const swaggerSpec = require('./swagger');
 
 const app = express();
 /** OrigenCondicion para determinar el ambiente de desarrollo
@@ -25,16 +27,12 @@ app.use(express.json()); // importante para leer req.body
 app.use('/uploads', express.static('uploads'));
 
 // Swagger
-const specs = swaggerJsdoc({
-  swaggerDefinition: swaggerDocument,
-  apis: ['./swagger.js'],
-});
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /**
  * Registra los endpoints de la API y los vincula a sus routers correspondientes.
  * @param {import('express').Express} appInstance Instancia principal de Express.
- * @returns {void}
+ * @returns {Promise<void>}
  */
 app.use('/api/products', require('./routes/products'));
 app.use('/api/users', require('./routes/users'));
@@ -50,6 +48,7 @@ app.get('/', (req, res) => {
 });
 
 // Puerto
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
+  console.log(`Servidor escuchando en puerto ${PORT}`);
 });
