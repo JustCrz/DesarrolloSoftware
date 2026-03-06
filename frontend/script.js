@@ -136,24 +136,35 @@ async function cargarProductos() {
 }
 
 function renderCatalog() {
-  const container = el('catalog');
+  const container = el('catalogGrid'); 
+  if (!container) return;
   container.innerHTML = '';
-
   productos.forEach(p => {
-    const productId = getProductId(p);
-    const stock = getProductStock(p);
-
     const card = document.createElement('article');
     card.className = 'producto';
+    // LIMPIEZA DE RUTA: 
+    // Si p.Imagen ya trae "uploads/", lo quitamos para no repetirlo.
+    // Luego construimos la URL completa: BASE + uploads + nombre_imagen
+    const nombreImagen = p.Imagen ? p.Imagen.replace('uploads/', '').replace('/uploads/', '') : '';
+    const urlFinal = `${API_BASE}/uploads/${nombreImagen}`;
     card.innerHTML = `
-      <img src="${p.Imagen}" alt="${p.Nombre}" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+      <img src="${urlFinal}" 
+           alt="${p.Nombre}" 
+           style="width:100%; height:200px; object-fit:cover; border-radius: 8px;"
+           onerror="this.src='https://via.placeholder.com/400x300?text=Imagen+no+disponible'">
       <h3>${p.Nombre}</h3>
-      <p class="muted">Color: ${p.Color || '-'}</p>
+      <p class="muted">Color: ${p.Color || 'N/A'}</p>
       <p><strong>$${p.Precio}</strong></p>
-      <p>Stock: ${stock}</p>
+      <p>Stock: ${p.Stock}</p>
       <div class="meta">
-        ${loggedUser?.role === 'cliente' ? `<input id="cantidad_${productId}" type="number" min="1" max="${stock}" value="${stock > 0 ? 1 : 0}" style="width:60px">
-        <button ${stock === 0 ? 'class="agotado" disabled' : ''} onclick="addToCart(${productId})">${stock === 0 ? 'Agotado' : 'Agregar'}</button>` : ''}
+        ${loggedUser?.role === 'cliente' ? `
+          <input id="cantidad_${p.IdProducto}" type="number" min="1" max="${p.Stock}" 
+                 value="${p.Stock > 0 ? 1 : 0}" style="width:60px">
+          <button ${p.Stock === 0 ? 'class="agotado" disabled' : ''} 
+                  onclick="addToCart(${p.IdProducto})">
+            ${p.Stock === 0 ? 'Agotado' : 'Agregar'}
+          </button>
+        ` : ''}
       </div>`;
     container.appendChild(card);
   });
@@ -284,7 +295,7 @@ formProducto.addEventListener('submit', async e => {
   const Nombre = el('nombre').value.trim();
   const Talla = el('talla').value.trim();
   const Categoria = el('categoria').value.trim();
-  const Stock = parseInt(el('stock').value, 10);
+  const Stock = parseInt(el('stock').value);
   const Precio = parseFloat(el('precio').value);
   const Color = el('color').value.trim();
   const Imagen = el('imagen').files[0];
@@ -312,9 +323,11 @@ formProducto.addEventListener('submit', async e => {
     }
 
     editingId = null;
+    alert(editingId ? 'Producto actualizado' : 'Producto agregado con éxito');
     formProducto.reset();
     await cargarProductos();
-    renderAdminList();
+    showAdminPanel();
+    showAdminSection('inventario');
   } catch (err) {
     console.error(err);
     alert('Error al guardar producto');

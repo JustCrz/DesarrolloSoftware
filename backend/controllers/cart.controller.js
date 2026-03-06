@@ -4,13 +4,6 @@
 
 const pool = require('../bd');
 
-/**
- * Recalcular y actualizar el total del carrito
- * @async
- * @function actualizarTotalCarrito
- * @param {number} idCarrito Id del carrito
- * @returns {Promise<number>} Total actualizado
- */
 async function actualizarTotalCarrito(idCarrito) {
   const [rows] = await pool.query(
     `
@@ -28,125 +21,152 @@ async function actualizarTotalCarrito(idCarrito) {
 }
 
 /**
- * Obtener carrito por cliente con su lista de productos
+ * Obtener carrito de un cliente
  * @async
  * @function getCartClient
- * @param {number} idCliente Id del cliente
- * @returns {Promise<Object|null>} Carrito del cliente o null
+ * @param {Object} req Request de Express
+ * @param {Object} res Response de Express
+ * @returns {Promise<Object>} Respuesta HTTP con carrito
  */
-async function getCartClient(idCliente) {
-  const [carritoRows] = await pool.query('SELECT * FROM carrito WHERE IdCliente = ?', [idCliente]);
-  if (carritoRows.length === 0) {
-    return null;
-  }
+async function getCartClient(req, res) {
+  try {
+    const idCliente = parseInt(req.params.idCliente);
+    const [carritoRows] = await pool.query('SELECT * FROM carrito WHERE IdCliente = ?', [idCliente]);
+    if (carritoRows.length === 0) {
+      return res.json({ ok: true, carrito: null });
+    }
 
-  const carrito = carritoRows[0];
-  const [productos] = await pool.query(
-    `
+    const carrito = carritoRows[0];
+    const [productos] = await pool.query(
+      `
       SELECT cp.IdProducto, p.Nombre, p.Precio, cp.Cantidad
       FROM carritoproducto cp
       JOIN producto p ON cp.IdProducto = p.IdProducto
       WHERE cp.IdCarrito = ?
     `,
-    [carrito.IdCarrito]
-  );
+      [carrito.IdCarrito]
+    );
 
-  return {
-    ...carrito,
-    productos
-  };
+    carrito.productos = productos;
+    return res.json({ ok: true, carrito });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: 'Error al obtener carrito' });
+  }
 }
 
 /**
- * Agregar un producto al carrito del cliente
+ * Agregar producto al carrito
  * @async
  * @function addProductToCart
- * @param {number} idCliente Id del cliente
- * @param {number} idProducto Id del producto
- * @param {number} cantidad Cantidad a agregar
- * @returns {Promise<number>} Total actualizado del carrito
+ * @param {Object} req Request de Express
+ * @param {Object} res Response de Express
+ * @returns {Promise<Object>} Respuesta HTTP de alta
  */
-async function addProductToCart(idCliente, idProducto, cantidad) {
-  let [carritoRows] = await pool.query('SELECT * FROM carrito WHERE IdCliente = ?', [idCliente]);
-  let idCarrito;
+async function addProductToCart(req, res) {
+  try {
+    const idCliente = parseInt(req.params.idCliente);
+    const { IdProducto, Cantidad } = req.body;
 
-  if (carritoRows.length === 0) {
-    const [result] = await pool.query('INSERT INTO carrito (IdCliente, Total) VALUES (?, 0)', [idCliente]);
-    idCarrito = result.insertId;
-  } else {
-    idCarrito = carritoRows[0].IdCarrito;
-  }
+    let [carritoRows] = await pool.query('SELECT * FROM carrito WHERE IdCliente = ?', [idCliente]);
+    let idCarrito;
 
-  const [prodRows] = await pool.query(
-    'SELECT * FROM carritoproducto WHERE IdCarrito = ? AND IdProducto = ?',
-    [idCarrito, idProducto]
-  );
+    if (carritoRows.length === 0) {
+      const [result] = await pool.query('INSERT INTO carrito (IdCliente, Total) VALUES (?, 0)', [idCliente]);
+      idCarrito = result.insertId;
+    } else {
+      idCarrito = carritoRows[0].IdCarrito;
+    }
 
-  if (prodRows.length > 0) {
-    await pool.query(
-      'UPDATE carritoproducto SET Cantidad = Cantidad + ? WHERE IdCarrito = ? AND IdProducto = ?',
-      [cantidad, idCarrito, idProducto]
+    const [prodRows] = await pool.query(
+      'SELECT * FROM carritoproducto WHERE IdCarrito = ? AND IdProducto = ?',
+      [idCarrito, IdProducto]
     );
-  } else {
-    await pool.query(
-      'INSERT INTO carritoproducto (IdCarrito, IdProducto, Cantidad) VALUES (?, ?, ?)',
-      [idCarrito, idProducto, cantidad]
-    );
-  }
 
-  const total = await actualizarTotalCarrito(idCarrito);
-  return total;
+    if (prodRows.length > 0) {
+      await pool.query(
+        'UPDATE carritoproducto SET Cantidad = Cantidad + ? WHERE IdCarrito = ? AND IdProducto = ?',
+        [Cantidad, idCarrito, IdProducto]
+      );
+    } else {
+      await pool.query(
+        'INSERT INTO carritoproducto (IdCarrito, IdProducto, Cantidad) VALUES (?, ?, ?)',
+        [idCarrito, IdProducto, Cantidad]
+      );
+    }
+
+    const total = await actualizarTotalCarrito(idCarrito);
+    return res.status(201).json({ ok: true, message: 'Producto agregado al carrito', Total: total });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: 'Error al agregar producto al carrito' });
+  }
 }
 
 /**
- * Eliminar un producto del carrito del cliente
+ * Eliminar producto de un carrito
  * @async
  * @function removeProductFromCart
- * @param {number} idCliente Id del cliente
- * @param {number} idProducto Id del producto
- * @returns {Promise<number|null>} Total actualizado o null si no hay carrito
+ * @param {Object} req Request de Express
+ * @param {Object} res Response de Express
+ * @returns {Promise<Object>} Respuesta HTTP de eliminacion
  */
-async function removeProductFromCart(idCliente, idProducto) {
-  const [carritoRows] = await pool.query('SELECT * FROM carrito WHERE IdCliente = ?', [idCliente]);
-  if (carritoRows.length === 0) {
-    return null;
+async function removeProductFromCart(req, res) {
+  try {
+    const idCliente = parseInt(req.params.idCliente);
+    const idProducto = parseInt(req.params.idProducto);
+    const [carritoRows] = await pool.query('SELECT * FROM carrito WHERE IdCliente = ?', [idCliente]);
+
+    if (carritoRows.length === 0) {
+      return res.status(404).json({ ok: false, message: 'Carrito no encontrado' });
+    }
+
+    const idCarrito = carritoRows[0].IdCarrito;
+    await pool.query('DELETE FROM carritoproducto WHERE IdCarrito = ? AND IdProducto = ?', [idCarrito, idProducto]);
+
+    const total = await actualizarTotalCarrito(idCarrito);
+    return res.json({ ok: true, message: 'Producto eliminado del carrito', Total: total });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: 'Error al eliminar producto del carrito' });
   }
-
-  const idCarrito = carritoRows[0].IdCarrito;
-  await pool.query('DELETE FROM carritoproducto WHERE IdCarrito = ? AND IdProducto = ?', [idCarrito, idProducto]);
-
-  const total = await actualizarTotalCarrito(idCarrito);
-  return total;
 }
 
 /**
- * Actualizar la cantidad de un producto en el carrito
+ * Actualizar cantidad de un producto en carrito
  * @async
  * @function updateProductQuantity
- * @param {number} idCliente Id del cliente
- * @param {number} idProducto Id del producto
- * @param {number} cantidad Nueva cantidad
- * @returns {Promise<number|null>} Total actualizado o null si no hay carrito
+ * @param {Object} req Request de Express
+ * @param {Object} res Response de Express
+ * @returns {Promise<Object>} Respuesta HTTP de actualizacion
  */
-async function updateProductQuantity(idCliente, idProducto, cantidad) {
-  const [carritoRows] = await pool.query('SELECT * FROM carrito WHERE IdCliente = ?', [idCliente]);
-  if (carritoRows.length === 0) {
-    return null;
+async function updateProductQuantity(req, res) {
+  try {
+    const idCliente = parseInt(req.params.idCliente);
+    const { IdProducto, Cantidad } = req.body;
+    const [carritoRows] = await pool.query('SELECT * FROM carrito WHERE IdCliente = ?', [idCliente]);
+
+    if (carritoRows.length === 0) {
+      return res.status(404).json({ ok: false, message: 'Carrito no encontrado' });
+    }
+
+    const idCarrito = carritoRows[0].IdCarrito;
+
+    if (Cantidad <= 0) {
+      await pool.query('DELETE FROM carritoproducto WHERE IdCarrito = ? AND IdProducto = ?', [idCarrito, IdProducto]);
+    } else {
+      await pool.query(
+        'UPDATE carritoproducto SET Cantidad = ? WHERE IdCarrito = ? AND IdProducto = ?',
+        [Cantidad, idCarrito, IdProducto]
+      );
+    }
+
+    const total = await actualizarTotalCarrito(idCarrito);
+    return res.json({ ok: true, message: 'Cantidad actualizada', Total: total });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: 'Error al actualizar cantidad del carrito' });
   }
-
-  const idCarrito = carritoRows[0].IdCarrito;
-
-  if (cantidad <= 0) {
-    await pool.query('DELETE FROM carritoproducto WHERE IdCarrito = ? AND IdProducto = ?', [idCarrito, idProducto]);
-  } else {
-    await pool.query(
-      'UPDATE carritoproducto SET Cantidad = ? WHERE IdCarrito = ? AND IdProducto = ?',
-      [cantidad, idCarrito, idProducto]
-    );
-  }
-
-  const total = await actualizarTotalCarrito(idCarrito);
-  return total;
 }
 
 exports.getCartClient = getCartClient;

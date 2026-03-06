@@ -8,53 +8,71 @@ const db = require('../bd');
  * Obtener todos los proveedores
  * @async
  * @function getProviders
- * @returns {Promise<Array>} Lista de proveedores
+ * @param {Object} req Request de Express
+ * @param {Object} res Response de Express
+ * @returns {Promise<Object>} Respuesta HTTP con proveedores
  */
-async function getProviders() {
+async function getProviders(req, res) {
+  try {
     const sql = 'SELECT * FROM proveedores';
-    const [result] = await db.query(sql)
-    return result
+    const [providers] = await db.query(sql);
+    return res.json({ ok: true, providers, provider: providers });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: 'Error al obtener proveedores' });
+  }
 }
 
 /**
  * Registrar un nuevo proveedor
  * @async
  * @function addProvider
- * @param {Object} providerData Datos del proveedor
- * @returns {Promise<Object>} Resultado de la insercion
+ * @param {Object} req Request de Express
+ * @param {Object} res Response de Express
+ * @returns {Promise<Object>} Respuesta HTTP del registro
  */
-async function addProvider(providerData) {
-    const { Nombre, Telefono, Correo, Direccion } = providerData;
-    
+async function addProvider(req, res) {
+  try {
+    const { Nombre, Telefono, Correo, Direccion } = req.body;
+
     const [existing] = await db.query(
-        'SELECT * FROM proveedores WHERE Correo = ?',
-        [Correo]
+      'SELECT * FROM proveedores WHERE Correo = ?',
+      [Correo]
     );
 
     if (existing.length > 0) {
-    throw new Error('El correo ya está registrado');
+      return res.status(400).json({ ok: false, message: 'El correo ya esta registrado' });
     }
 
-    const [result] = await db.query(
+    await db.query(
       'INSERT INTO proveedores (Nombre, Telefono, Correo, Direccion) VALUES (?, ?, ?, ?)',
       [Nombre, Telefono || null, Correo || null, Direccion || null]
     );
 
-    return result;
+    return res.status(201).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: 'Error al agregar proveedor' });
+  }
 }
 
 /**
  * Eliminar un proveedor
  * @async
  * @function deleteProvider
- * @param {number} id
- * @returns {Promise<void>}
+ * @param {Object} req Request de Express
+ * @param {Object} res Response de Express
+ * @returns {Promise<Object>} Respuesta HTTP de eliminacion
  */
-async function deleteProvider(id) {
-    await db.query(
-        'DELETE FROM proveedores WHERE IdProveedor = ?', 
-        [id]
-    );
+async function deleteProvider(req, res) {
+  try {
+    const id = parseInt(req.params.id);
+    await db.query('DELETE FROM proveedores WHERE IdProveedor = ?', [id]);
+    return res.json({ ok: true, message: 'Proveedor eliminado' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: 'Error al eliminar proveedor' });
+  }
 }
 
 exports.getProviders = getProviders;
