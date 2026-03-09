@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+<<<<<<< HEAD
 // Importamos el controlador donde movimos toda tu lógica anterior
 const cartController = require('../controllers/cart.controller');
 
@@ -28,3 +29,13 @@ router.put('/:idCliente', cartController.updateProductQuantity); // Asegúrate q
 router.delete('/:idCliente/:idProducto', cartController.removeProductFromCart);
 
 module.exports = router;
+=======
+const cartController = require('../controllers/cart.controller');
+
+router.get('/:idCliente', cartController.getCartClient);
+router.post('/:idCliente', cartController.addProductToCart);
+router.delete('/:idCliente/:idProducto', cartController.removeProductFromCart);
+router.put('/:idCliente', cartController.updateProductQuantity);
+
+module.exports = router;
+>>>>>>> origin/main

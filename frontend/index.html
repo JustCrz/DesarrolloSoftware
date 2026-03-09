@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<<<<<<< HEAD
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Marjorie Store</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://js.stripe.com/v3/"></script>
+=======
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Marjorie Store</title>
+<link rel="stylesheet" href="style.css" />
+>>>>>>> origin/main
 </head>
 <body>
 
@@ -24,6 +31,10 @@
 </header>
 
 <main>
+<<<<<<< HEAD
+=======
+  <!-- Landing -->
+>>>>>>> origin/main
   <section id="landing" class="card center">
     <h2>Bienvenida a Marjorie Store</h2>
     <p>Ropa femenina, elegante y actual.</p>
@@ -33,7 +44,12 @@
     </div>
   </section>
 
+<<<<<<< HEAD
   <section id="login" class="card modal hidden">
+=======
+  <!-- Login -->
+  <section id="login" class="card modal hidden" aria-hidden="true">
+>>>>>>> origin/main
     <h3>Iniciar sesión</h3>
     <input id="loginUser" type="email" placeholder="Email" />
     <input id="loginPass" placeholder="Contraseña" type="password" />
@@ -44,7 +60,12 @@
     <p id="loginMsg" class="error"></p>
   </section>
 
+<<<<<<< HEAD
   <section id="register" class="card modal hidden">
+=======
+  <!-- Register -->
+  <section id="register" class="card modal hidden" aria-hidden="true">
+>>>>>>> origin/main
     <h3>Registrarse</h3>
     <input id="regUser" placeholder="Nombre" />
     <input id="regEmail" type="email" placeholder="Email" />
@@ -58,6 +79,7 @@
     <p id="regMsg" class="success"></p>
   </section>
 
+<<<<<<< HEAD
   <section id="catalog" class="hidden">
     <div class="card" style="background: var(--accent-soft); margin-bottom: 20px; border: 2px solid var(--accent);">
         <h3 style="margin: 0 0 10px 0;">👑 Producto Estrella</h3>
@@ -90,6 +112,37 @@
       </aside>
 
       <div class="admin-content">
+=======
+  <!-- Catalogo (cliente) -->
+  <section id="catalog" class="grid hidden"></section>
+
+  <!-- Product detail modal -->
+  <section id="productDetail" class="card modal hidden" aria-hidden="true"></section>
+
+  <!-- Carrito (cliente) -->
+  <section id="cart" class="card hidden">
+    <h3>Tu carrito</h3>
+    <div id="cartContents"></div>
+    <div id="cartFooter" class="cart-footer"></div>
+  </section>
+
+  <!-- Admin panel -->
+  <section id="adminPanel" class="card hidden">
+    <h2>Panel administrador</h2>
+    <div class="admin-inner">
+      <!-- Left column: navigation -->
+      <aside class="admin-nav">
+        <button onclick="showAdminSection('inventario')">Gestionar Inventario</button>
+        <button onclick="showAdminSection('proveedores')">Registrar Proveedores</button>
+        <button onclick="showAdminSection('catalogo')">Control Catálogo</button>
+        <button onclick="showAdminSection('pagos')">Gestionar Pagos</button>
+      </aside>
+
+      <!-- Right column: sections -->
+      <div class="admin-content">
+
+        <!-- Inventario -->
+>>>>>>> origin/main
         <div id="adminInventario" class="adminSection hidden">
           <h3>Gestionar Inventario</h3>
           <form id="formProducto">
@@ -99,15 +152,25 @@
             <input id="color" placeholder="Color" />
             <input id="precio" placeholder="Precio" type="number" required />
             <input id="stock" placeholder="Stock" type="number" required />
+<<<<<<< HEAD
             <input id="imagen" type="file" accept="image/*" />
             <div class="actions">
               <button type="submit">Guardar Producto</button>
+=======
+            <input id="imagen" type="file" accept="image/png, image/jpeg" placeholder="Imagen"/>
+            <div class="actions">
+              <button type="submit">Agregar / Modificar</button>
+>>>>>>> origin/main
               <button type="button" class="secondary" onclick="renderAdminList()">Cancelar</button>
             </div>
           </form>
           <div id="adminList" class="grid admin-grid"></div>
         </div>
 
+<<<<<<< HEAD
+=======
+        <!-- Proveedores -->
+>>>>>>> origin/main
         <div id="adminProveedores" class="adminSection hidden">
           <h3>Control Proveedores</h3>
           <form id="formProveedor">
@@ -115,11 +178,18 @@
             <input id="provTelefono" type="tel" placeholder="Teléfono" required />
             <input id="provEmail" type="email" placeholder="Email" />
             <input id="provDireccion" placeholder="Dirección" required />
+<<<<<<< HEAD
             <button type="submit">Agregar proveedor</button>
+=======
+            <div class="actions">
+              <button type="submit">Agregar proveedor</button>
+            </div>
+>>>>>>> origin/main
           </form>
           <div id="listaProveedores" class="list-providers"></div>
         </div>
 
+<<<<<<< HEAD
         <div id="adminCatalogo" class="adminSection hidden">
           <h3>Vista Previa del Catálogo</h3>
           <div id="catalogAdmin" class="grid"></div>
@@ -155,11 +225,30 @@
           <div id="pagosLista"></div>
           <p id="totalPagos" style="font-weight: bold; font-size: 1.2rem;"></p>
         </div>
+=======
+        <!-- Catalogo admin -->
+        <div id="adminCatalogo" class="adminSection hidden">
+          <h3>Control Catálogo (visualización pública)</h3>
+          <div id="catalogAdmin" class="grid"></div>
+        </div>
+
+        <!-- Pagos -->
+        <div id="adminPagos" class="adminSection hidden">
+          <h3>Gestión de pagos</h3>
+          <div id="pagosLista"></div>
+          <p id="totalPagos">Total de pagos: $0</p>
+          <div class="actions">
+            <button onclick="renderPagos()">Actualizar</button>
+          </div>
+        </div>
+
+>>>>>>> origin/main
       </div>
     </div>
   </section>
 </main>
 
+<<<<<<< HEAD
 <div id="cartMessage" class="toast"></div>
 
 <div id="modalProducto" class="modal-overlay hidden">
@@ -172,3 +261,11 @@
 <script src="script.js"></script>
 </body>
 </html>
+=======
+<!-- Toast para mensajes -->
+<div id="cartMessage" class="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
+>>>>>>> origin/main

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -28,10 +29,40 @@ const specs = swaggerJsdoc({
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // 5. Rutas de la API
+=======
+// backend/server.js
+require('dotenv').config(); //Local
+const express = require('express');
+const cors = require('cors');
+const authRoutes = require('./routes/auth');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
+
+
+const app = express();
+
+const allowedOrigin = process.env.NODE_ENV === 'production'
+  ? 'https://tiendamarjorie.unaux.com'
+  : 'http://127.0.0.1:5500';
+
+app.use(cors({
+  origin: allowedOrigin,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
+app.use(express.json()); // importante para leer req.body
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+>>>>>>> origin/main
 app.use('/api/products', require('./routes/products'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/providers', require('./routes/providers'));
 app.use('/api/sales', require('./routes/sales'));
+<<<<<<< HEAD
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/auth', require('./routes/auth'));
@@ -49,3 +80,19 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor de Marjorie Store corriendo en http://localhost:${PORT}`);
   console.log(`📚 Documentación API: http://localhost:${PORT}/api-docs`);
 });
+=======
+app.use('/api/pagos', require('./routes/pagos'));
+app.use('/api/cart', require('./routes/cart'));
+app.use('/api/auth', authRoutes);
+
+// Ruta raíz
+app.get('/', (req, res) => {
+  res.send('Servidor backend funcionando correctamente');
+});
+
+// Puerto
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en puerto ${PORT}`);
+});
+>>>>>>> origin/main

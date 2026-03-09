@@ -1,13 +1,31 @@
 // backend/addAdmins.js
+<<<<<<< HEAD
 const bcrypt = require('bcrypt');
 const pool = require('./bd');
 
+=======
+/**
+ * @module AddAdmin
+ */
+const bcrypt = require('bcrypt');
+const pool = require('./bd');
+
+/**
+ * Agrear la cuenta de un admin
+ * @async
+ * @function addAdmin
+ * @param {object} Se genera la lista de correos deseados
+ * @returns {Promise<object>} Resultado de insercion
+ */
+
+>>>>>>> origin/main
 async function addAdmins() {
   try {
     const admins = [
       { NombreC: 'Admin Principal', Correo: 'admin@tienda.com', Contraseña: 'admin123', Telefono: '', Direccion: '' },
       { NombreC: 'Gerente', Correo: 'gerente@tienda.com', Contraseña: 'gerente123', Telefono: '', Direccion: '' }
     ];
+<<<<<<< HEAD
 
     for (const user of admins) {
       // 1. Verificar si ya existe para evitar errores
@@ -22,15 +40,27 @@ async function addAdmins() {
       const hashed = await bcrypt.hash(user.Contraseña, 10);
       
       // 3. Insertar
+=======
+    for (const user of admins) {
+      // Hash de la contraseña
+      const hashed = await bcrypt.hash(user.Contraseña, 10);
+      // Insertar en la tabla Clientes
+>>>>>>> origin/main
       const [result] = await pool.query(
         'INSERT INTO cliente (NombreC, Telefono, Direccion, Correo, Contraseña) VALUES (?, ?, ?, ?, ?)',
         [user.NombreC, user.Telefono || null, user.Direccion || null, user.Correo, hashed]
       );
+<<<<<<< HEAD
       
       console.log(`Admin agregado correctamente: ${user.Correo} (Id: ${result.insertId})`);
     }
     
     console.log('Proceso de carga de admins finalizado.');
+=======
+      console.log(`Admin agregado: ${user.Correo} (Id: ${result.insertId})`);
+    }
+    console.log('Todos los admins fueron agregados exitosamente.');
+>>>>>>> origin/main
     process.exit(0);
   } catch (err) {
     console.error('Error al agregar admins:', err);
@@ -38,4 +68,8 @@ async function addAdmins() {
   }
 }
 
+<<<<<<< HEAD
 addAdmins();
+=======
+addAdmins();
+>>>>>>> origin/main

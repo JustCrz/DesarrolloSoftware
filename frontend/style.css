@@ -310,6 +310,7 @@ th{
   .producto img{
     height:200px;
   }
+<<<<<<< HEAD
 }
 /* ==============================
    DASHBOARD / ESTADÍSTICAS
@@ -585,3 +586,6 @@ input[type="number"] {
   color: var(--accent);
 }
 
+=======
+}
+>>>>>>> origin/main
