@@ -1,11 +1,12 @@
 const mysql = require('mysql2/promise');
 
+// Al usar process.env, el sistema tomará los datos del archivo .env
 const pool = mysql.createPool({
-  host: '127.0.0.1',     // Cambiado de localhost a IP para evitar errores en Mac
-  user: 'root',          // Usuario por defecto de XAMPP
-  password: '',          // XAMPP normalmente no tiene contraseña
-  database: 'tiendaropa', // El nombre que veo en tu captura de phpMyAdmin
-  port: 3306,
+  host: process.env.DB_HOST || '127.0.0.1', // Usa el .env o 127.0.0.1 por defecto
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASS || '',
+  database: process.env.DB_NAME || 'tiendaropa',
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -15,10 +16,11 @@ const pool = mysql.createPool({
 (async () => {
   try {
     const connection = await pool.getConnection();
-    console.log('✅ Conexión a la base de datos "tiendaropa" exitosa');
+    console.log(`✅ Conexión a la base de datos "${process.env.DB_NAME || 'tiendaropa'}" exitosa`);
     connection.release(); 
   } catch (err) {
     console.error('❌ Error al conectar a la DB:', err.message);
+    console.log('Revisa que tu servidor MySQL (XAMPP) esté encendido y los datos del .env sean correctos.');
   }
 })();
 

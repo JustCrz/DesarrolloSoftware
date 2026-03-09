@@ -1,6 +1,6 @@
 /* ---------------- Configuración ---------------- */
 const API_BASE = 'http://localhost:3000';
-
+const stripe = Stripe('pk_test_51T8pDsFOBjDn2DDlWx88AjYqbf1NHYmfgppF5i4eIkJW65P70KQyD2INWT5YQo5FEXFDsOsFGOnBDvggkXp3E4vM00wyBe4HmE');
 /* ---------------- Datos locales ---------------- */
 let productos = [];
 let proveedores = [];
@@ -31,7 +31,6 @@ function showAdminSection(section){
     case 'inventario': show('adminInventario'); renderAdminList(); break;
     case 'proveedores': show('adminProveedores'); renderProveedores(); break;
     case 'catalogo': show('adminCatalogo'); renderCatalogAdmin(); break;
-    case 'corte': show('adminCorte'); renderCorte(); break;
     case 'estadisticas': show('adminEstadisticas'); renderEstadisticas(); break;
     case 'pagos': show('adminPagos'); renderPagos(); 
     break;
@@ -40,14 +39,14 @@ function showAdminSection(section){
 
 /* ---------------- Autenticación ---------------- */
 async function login() {
-  const Correo = el('loginUser').value.trim(); // Nombre consistente
-  const Contraseña = el('loginPass').value;
+  const correo = el('loginUser').value.trim().toLowerCase();// Nombre consistente
+  const contraseña = el('loginPass').value;
 
   try {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ Correo, Contraseña }) // Enviamos con Mayúscula
+      body: JSON.stringify({ correo, contraseña }) // Enviamos con Mayúscula
     });
     
     const data = await res.json();
@@ -66,12 +65,13 @@ async function login() {
   }
 }
 
-function afterLogin(){
-  el('loginMsg').textContent='';
+function afterLogin() {
+  el('loginMsg').textContent = '';
   el('btnLogout').classList.remove('hidden');
   el('btnInicio').classList.add('hidden');
 
-  if(loggedUser.role==='admin'){
+  // Ajustado para usar la propiedad 'role' que envía tu backend
+  if (loggedUser.role === 'admin') {
     el('btnPanel').classList.remove('hidden');
     el('btnCart').classList.add('hidden');
     showAdminPanel();
@@ -144,26 +144,11 @@ function renderCatalog() {
     const urlFinal = `${API_BASE}/uploads/${nombreImagen}`;
 
     card.innerHTML = `
-      <img src="${urlFinal}" 
-           alt="${p.Nombre}" 
-           style="width:100%; height:200px; object-fit:cover; border-radius: 8px;"
-           onerror="this.src='https://via.placeholder.com/400x300?text=Imagen+no+disponible'">
-      
-      <h3>${p.Nombre}</h3>
-      <p class="muted">Color: ${p.Color || 'N/A'}</p>
-      <p><strong>$${p.Precio}</strong></p>
-      <p>Stock: ${p.Stock}</p>
-      
-      <div class="meta">
-        ${loggedUser?.role === 'cliente' ? `
-          <input id="cantidad_${p.IdProducto}" type="number" min="1" max="${p.Stock}" 
-                 value="${p.Stock > 0 ? 1 : 0}" style="width:60px">
-          <button ${p.Stock === 0 ? 'class="agotado" disabled' : ''} 
-                  onclick="addToCart(${p.IdProducto})">
-            ${p.Stock === 0 ? 'Agotado' : 'Agregar'}
-          </button>
-        ` : ''}
-      </div>`;
+  <img src="${urlFinal}" alt="${p.Nombre}" style="width:100%; height:250px; object-fit:cover; border-radius: 8px;">
+  <h3>${p.Nombre}</h3>
+  <div>${renderEstrellas(p.Calificacion || 0)}</div>
+  <button onclick="abrirModalProducto(${p.IdProducto})">Ver detalles</button>
+`;
       
     container.appendChild(card);
   });
@@ -171,23 +156,43 @@ function renderCatalog() {
 
 /* ---------------- Carrito ---------------- */
 function mostrarCarrito(){ hideAll(); show('cart'); renderCarrito(); }
-function renderCarrito(){
-  const container = el('cartContents'); const footer=el('cartFooter'); container.innerHTML=''; footer.innerHTML='';
-  if(carrito.length===0){ container.innerHTML='<p>Tu carrito está vacío</p>'; return; }
-  let total=0;
-  carrito.forEach((item,index)=>{
-    const subtotal=item.Precio*item.Cantidad; total+=subtotal;
-    const div=document.createElement('div');
-    div.className='cart-item';
-    div.innerHTML=`
-      <span><strong>${item.Nombre}</strong> - $${item.Precio}</span>
-      <input type="number" min="1" value="${item.Cantidad}" style="width:50px" onchange="updateCantidad(${index},this.value)">
-      <span>Subtotal: $${subtotal}</span>
-      <button onclick="eliminarDelCarrito(${index})">Eliminar</button>`;
-    container.appendChild(div);
-  });
-  footer.innerHTML=`<p><strong>Total: $${total}</strong></p>
-    <button onclick="finalizarCompra()">Finalizar Compra</button>`;
+function renderCarrito() {
+    const container = document.getElementById('cartContents');
+    const totalDisplay = document.getElementById('totalDisplay');
+    const btnPagar = document.getElementById('btnPagar');
+    
+    container.innerHTML = ''; 
+    
+    if (carrito.length === 0) {
+        container.innerHTML = '<p>Tu carrito está vacío.</p>';
+        if(totalDisplay) totalDisplay.innerText = '$0.00';
+        if(btnPagar) btnPagar.classList.add('hidden');
+        return;
+    }
+    
+    let total = 0;
+    
+    carrito.forEach((item, index) => {
+        const subtotal = item.Precio * item.Cantidad;
+        total += subtotal;
+        
+        const div = document.createElement('div');
+        // Usamos una estructura simple para que el CSS viejo la detecte bien
+        div.innerHTML = `
+            <div class="producto-item">
+                <img src="${item.imagen || 'placeholder.jpg'}" alt="${item.Nombre}" style="width: 80px;">
+                <h3>${item.Nombre}</h3>
+                <p>$${item.Precio} x ${item.Cantidad}</p>
+                <button onclick="eliminarDelCarrito(${index})">Eliminar</button>
+            </div>
+            <p>Subtotal: $${subtotal.toFixed(2)}</p>
+            <hr>
+        `;
+        container.appendChild(div);
+    });
+    
+    if(totalDisplay) totalDisplay.innerText = `$${total.toFixed(2)}`;
+    if(btnPagar) btnPagar.classList.remove('hidden');
 }
 
 function addToCart(id){
@@ -217,67 +222,138 @@ function eliminarDelCarrito(index){
   carrito.splice(index,1); renderCatalog(); renderCarrito();
 }
 
-async function finalizarCompra() {
+
+/* ---------------- Pagos con Stripe ---------------- */
+async function handlePayment() {
   if (carrito.length === 0) {
     alert('No hay productos en el carrito');
     return;
   }
 
-  // 1. Objeto para TU base de datos (simplificado para el backend)
-  const ventaPendiente = {
-      IdCliente: loggedUser?.IdCliente || null,
-      productos: carrito.map(i => ({ 
-        IdProducto: i.IdProducto, 
-        Cantidad: i.Cantidad 
-      })),
-      Estado: 'Pagado'
-  };
-
-  localStorage.setItem('venta_pendiente', JSON.stringify(ventaPendiente));
-
   try {
-    // 2. Solicitamos la preferencia enviando lo que Mercado Pago necesita ver
-    const res = await fetch(`${API_BASE}/api/payments/create_preference`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        // IMPORTANTE: Aquí enviamos los datos para la pantalla de pago de MP
-        items: carrito.map(i => ({
-          title: i.Nombre,
-          unit_price: Number(parseFloat(i.Precio).toFixed(2)),
-          quantity: parseInt(i.Cantidad),
-          currency_id: 'MXN'
-        }))
-      })
+    // 1. Enviamos el carrito y el ID del usuario al backend
+    // Esto crea la sesión y prepara la "metadata" para el Webhook
+    const response = await fetch(`${API_BASE}/api/stripe/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            items: carrito,
+            idUsuario: loggedUser ? loggedUser.IdCliente : null 
+        }) 
     });
 
-    const data = await res.json();
+    const session = await response.json();
 
-    if (data.id) {
-      // 3. Inicializar Mercado Pago
-      const mp = new MercadoPago('APP_USR-795ce2fa-78bf-4003-89af-d1ca0188b4b3', {
-        locale: 'es-MX'
-      }); 
+    // 2. Redirigir a Stripe
+    const result = await stripe.redirectToCheckout({
+        sessionId: session.id
+    });
 
-      mp.checkout({
-        preference: { id: data.id },
-        autoOpen: true 
-      });
-    } else {
-      alert('Error al generar la pasarela de pago');
-    }
-  } catch (err) {
-    alert('Error de conexión con el servidor de pagos');
-    console.error(err);
+    if (result.error) alert(result.error.message);
+    
+  } catch (error) {
+    console.error("Error al procesar pago:", error);
+    alert("Hubo un error al conectar con el servidor de pagos.");
   }
+}
+// En tu script.js, añade esta función de limpieza
+function limpiarCarrito() {
+    carrito = [];
+    renderCarrito(); // Esto actualizará la vista a "carrito vacío"
+    showToast("¡Pago procesado con éxito!");
 }
 
 
+function abrirModalProducto(id) {
+  const p = productos.find(x => x.IdProducto === id);
+  if (!p) return;
+
+  const modalBody = el('modalBody');
+  const nombreImagen = p.Imagen ? p.Imagen.replace('uploads/', '').replace('/uploads/', '') : '';
+  const urlFinal = `${API_BASE}/uploads/${nombreImagen}`;
+
+  modalBody.innerHTML = `
+    <div class="modal-product-layout">
+      <button class="close-modal" onclick="cerrarModal()">×</button>
+      <img src="${urlFinal}" alt="${p.Nombre}" style="width:100%; border-radius:12px; margin-bottom:15px;">
+      
+      <div class="product-info">
+        <h2 style="margin:0;">${p.Nombre}</h2>
+        <div style="margin: 5px 0;">${renderEstrellas(p.Calificacion || 0)}</div>
+        <p style="font-size:1.2rem; color:var(--accent); font-weight:bold;">$${p.Precio}</p>
+        <p style="font-size:0.9rem; color:var(--muted);">Stock disponible: ${p.Stock}</p>
+      </div>
+      
+      <div class="selection-group">
+        <label>Talla:</label>
+        <select id="modalTalla" class="modern-select">
+          <option value="M">Talla M</option>
+          <option value="L">Talla L</option>
+        </select>
+        
+        <label>Cantidad:</label>
+        <input type="number" id="modalCantidad" value="1" min="1" max="${p.Stock}" class="modern-input">
+      </div>
+      
+      <button class="btn-add-modal" onclick="addToCartFromModal(${p.IdProducto})">
+        Agregar al carrito
+      </button>
+    </div>
+  `;
+
+  show('modalProducto');
+}
+
+// La lógica de addToCartFromModal se mantiene igual, 
+// solo asegúrate de que el nombre del ID en el HTML coincida.
+function addToCartFromModal(id) {
+  const p = productos.find(x => x.IdProducto === id);
+  if (!p) return;
+
+  // ¡IMPORTANTE! Capturamos los valores del DOM antes de procesar
+  const cantidad = parseInt(el('modalCantidad').value);
+  const talla = el('modalTalla').value;
+
+  if (isNaN(cantidad) || cantidad < 1) {
+    alert("Por favor ingresa una cantidad válida");
+    return;
+  }
+
+  if (cantidad > p.Stock) {
+    alert('Stock insuficiente');
+    return;
+  }
+
+  // Creamos el objeto con la personalización
+  const item = {
+    ...p,
+    Cantidad: cantidad,
+    TallaSeleccionada: talla // Guardamos la talla elegida por el cliente
+  };
+
+  // Lógica para añadir al carrito
+  const existente = carrito.find(i => i.IdProducto === id && i.TallaSeleccionada === talla);
+  if (existente) {
+    existente.Cantidad += cantidad;
+  } else {
+    carrito.push(item);
+  }
+
+  p.Stock -= cantidad; // Reducimos el stock
+  
+  cerrarModal(); // Cerramos la ventana
+  showToast(`${p.Nombre} (${talla}) agregado al carrito`);
+  renderCarrito(); // Actualizamos la vista del carrito
+}
+
+function cerrarModal() {
+    document.getElementById('modalProducto').classList.add('hidden');
+}
 /* ---------------- Admin: Inventario ---------------- */
 const formProducto = el('formProducto');
 let editingId = null;
 
-formProducto.addEventListener('submit', async e=>{
+formProducto.addEventListener('submit', async e => {
   e.preventDefault();
 
   const Nombre = el('nombre').value.trim();
@@ -286,10 +362,10 @@ formProducto.addEventListener('submit', async e=>{
   const Stock = parseInt(el('stock').value);
   const Precio = parseFloat(el('precio').value);
   const Color = el('color').value.trim();
-  const Imagen = el('imagen').files[0];
-
-  //const producto = { Nombre, Talla, Categoria, Stock, Precio, Color, Imagen };
   
+  // CORRECCIÓN: Captura el archivo real, no el valor del input
+  const ImagenFile = el('imagen').files[0]; 
+
   const formData = new FormData();
   formData.append('Nombre', Nombre);
   formData.append('Talla', Talla);
@@ -297,7 +373,11 @@ formProducto.addEventListener('submit', async e=>{
   formData.append('Stock', Stock);
   formData.append('Precio', Precio);
   formData.append('Color', Color);
-  if (Imagen) formData.append('Imagen', Imagen);
+  
+  // Solo agrega la imagen si el usuario seleccionó una nueva
+  if (ImagenFile) {
+      formData.append('Imagen', ImagenFile);
+  }
 
   try {
     if (editingId) {
@@ -349,9 +429,13 @@ const p = productos.find(x => x.IdProducto === id);
   el('stock').value = p.Stock;
   el('precio').value = p.Precio;
   el('color').value = p.Color;
-  el('imagen').value = p.Imagen; // si usas file, este valor no se puede asignar directamente
-  editingId = id;
+ const imgPreview = el('imgPreview'); 
+    if(imgPreview) imgPreview.src = `${API_BASE}/uploads/${p.Imagen}`;
+    
+    editingId = id;
+
 }
+
 
 async function deleteProducto(id) {
   if (!confirm('¿Eliminar producto?')) return;
@@ -433,6 +517,30 @@ async function deleteProveedor(id){
   } catch (err) {
     alert('Error al eliminar proveedor');
   }
+}
+/**
+ * Renderiza la lista de ventas filtradas por fecha
+ */
+function renderListaVentas(ventas) {
+  const container = el('listaVentasHistorial');
+  if (!container) return; // Si no existe el elemento, no hace nada
+  
+  container.innerHTML = '';
+  
+  if (!ventas || ventas.length === 0) {
+    container.innerHTML = '<p>No hay ventas registradas para esta fecha.</p>';
+    return;
+  }
+
+  ventas.forEach(v => {
+    const div = document.createElement('div');
+    div.style = "padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;";
+    div.innerHTML = `
+      <span><b>${v.NombreC || 'Cliente'}</b></span> 
+      <span>$${v.Total}</span>
+    `;
+    container.appendChild(div);
+  });
 }
 
 function renderCatalogAdmin(){
@@ -530,7 +638,7 @@ async function renderPagos() {
 
   try {
     const res = await fetch(`${API_BASE}/api/sales`);
-    const pagos = await res.json();
+    const pagos = await res.json(); // Asegúrate de que esto sea el array de ventas
 
     if(!Array.isArray(pagos) || pagos.length === 0) {
       container.innerHTML = '<p>No hay pagos registrados</p>';
@@ -539,14 +647,20 @@ async function renderPagos() {
 
     let total = 0;
     pagos.forEach(p => {
-      total += p.total;
+      // 1. Usa p.Total (mayúscula) para que coincida con el backend
+      total += parseFloat(p.Total || 0); 
+      
       const div = document.createElement('div');
       div.className = 'pago-item';
-      div.textContent = `${new Date(p.fecha).toLocaleDateString()} - Usuario: ${p.UsuarioId} - Total: $${p.Total}`;
+      
+      // 2. Ajusta las propiedades para que coincidan con la respuesta del SQL
+      // p.Fecha (mayúscula), p.NombreC (o el ID que devuelvas)
+      div.textContent = `${new Date(p.Fecha).toLocaleDateString()} - Cliente: ${p.NombreC || 'N/A'} - Total: $${p.Total}`;
+      
       container.appendChild(div);
     });
 
-    totalEl.textContent = `Total de pagos: $${total}`;
+    totalEl.textContent = `Total de pagos: $${total.toFixed(2)}`;
   } catch (err) {
     console.error(err);
     container.innerHTML = '<p>Error al cargar los pagos</p>';
@@ -581,6 +695,7 @@ async function cargarProductos() {
   }
 }
 cargarProductos();
+
 
 showLanding();
 async function cargarMasVendido() {
@@ -624,8 +739,8 @@ async function filtrarVentas() {
     
     if (data.ok) {
       // Actualizamos los números en los cuadros del Admin
-      el('totalIngresosVal').textContent = `$${data.ingresos || 0}`;
-      el('totalPedidosVal').textContent = data.pedidos || 0;
+    el('dashIngresosPeriodo').textContent = `$${data.ingresos || 0}`;
+el('dashPedidosPeriodo').textContent = data.pedidos || 0;
       
       // Si el backend te manda la lista de ventas de ese día, puedes renderizarla aquí
       renderListaVentas(data.ventasDetalle || []);
@@ -636,42 +751,13 @@ async function filtrarVentas() {
 }
 
 
-window.addEventListener('load', async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('status'); 
 
-    if (status === 'approved') {
-        const ventaParaGuardar = JSON.parse(localStorage.getItem('venta_pendiente'));
+function renderEstrellas(calificacion) {
+  const total = 5;
+  let estrellas = '';
+  for (let i = 1; i <= total; i++) {
+    estrellas += i <= Math.round(calificacion) ? '★' : '☆';
+  }
+  return `<span style="color: #FFD700; font-size: 1.2rem;">${estrellas}</span>`;
 
-        if (ventaParaGuardar) {
-            // Mostramos un mensaje de "Procesando" para que el usuario no cierre la página
-            showToast("Registrando tu compra, por favor espera...");
-            
-            try {
-                const res = await fetch(`${API_BASE}/api/sales`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(ventaParaGuardar)
-                });
-
-                const data = await res.json();
-
-                if (res.ok && data.ok) {
-                    localStorage.removeItem('venta_pendiente'); 
-                    carrito = []; // Limpiar carrito local
-                    renderCarrito();
-                    alert(`¡Pago exitoso! Pedido #${data.IdPedido} registrado.`);
-                    
-                    // Limpiar la URL para que no se registre dos veces si recarga
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    showCatalog();
-                } else {
-                    alert("Error al registrar: " + data.message);
-                }
-            } catch (err) {
-                console.error("Error post-pago:", err);
-                alert("Hubo un problema al registrar tu pedido en nuestra base de datos.");
-            }
-        }
-    }
-});
+}
