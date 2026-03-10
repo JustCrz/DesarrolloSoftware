@@ -1,13 +1,7 @@
-<<<<<<< HEAD
 /* ---------------- Configuración ---------------- */
-const API_BASE = 'http://localhost:3000';
-const stripe = Stripe('pk_test_51T8pDsFOBjDn2DDlWx88AjYqbf1NHYmfgppF5i4eIkJW65P70KQyD2INWT5YQo5FEXFDsOsFGOnBDvggkXp3E4vM00wyBe4HmE');
-=======
-/* ---------------- Configuracion ---------------- */
 // const API_BASE = 'https://desarrollosoftware.onrender.com'; // Trabajar con la api en la nube
-const API_BASE = 'http://localhost:3000'; // Trabajar local
-
->>>>>>> origin/main
+const API_BASE = 'http://localhost:3000';
+const stripe = Stripe('pk_test_51T9FMCAuz5OrtKFT0wnEX0niDHjIfkaXG6FnIER897RI9Xg30mYG14QJHc4S8B8DBu2UgQnpnwTjhxJqPyuMu9mO00yFEC18Tn');
 /* ---------------- Datos locales ---------------- */
 let productos = [];
 let proveedores = [];
@@ -19,7 +13,6 @@ let loggedUser = null;
 const el = id => document.getElementById(id);
 const show = id => el(id)?.classList.remove('hidden');
 const hide = id => el(id)?.classList.add('hidden');
-<<<<<<< HEAD
 
 /* ---------------- Navegación ---------------- */
 function hideAll(){
@@ -50,43 +43,10 @@ async function login() {
   const correo = el('loginUser').value.trim().toLowerCase();// Nombre consistente
   const contraseña = el('loginPass').value;
 
-=======
-const getProductId = product => product?.IdProducto ?? product?.id;
-const getProductStock = product => Number(product?.Stock ?? product?.stock ?? 0);
-
-/* ---------------- Navegacion ---------------- */
-function hideAll() {
-  ['landing', 'login', 'register', 'catalog', 'productDetail', 'adminPanel', 'cart'].forEach(id => hide(id));
-  document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
-}
-
-function showLanding() { hideAll(); show('landing'); }
-function showLogin() { hideAll(); show('login'); }
-function showRegister() { hideAll(); show('register'); }
-function showCatalog() { hideAll(); renderCatalog(); show('catalog'); }
-function showAdminPanel() { hideAll(); show('adminPanel'); showAdminSection('inventario'); }
-
-function showAdminSection(section) {
-  document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
-  switch (section) {
-    case 'inventario': show('adminInventario'); renderAdminList(); break;
-    case 'proveedores': show('adminProveedores'); renderProveedores(); break;
-    case 'catalogo': show('adminCatalogo'); renderCatalogAdmin(); break;
-    case 'corte': show('adminCorte'); if (typeof renderCorte === 'function') renderCorte(); break;
-    case 'pagos': show('adminPagos'); renderPagos(); break;
-  }
-}
-
-/* ---------------- Autenticacion ---------------- */
-async function login() {
-  const correo = el('loginUser').value.trim();
-  const contrasena = el('loginPass').value;
->>>>>>> origin/main
   try {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-<<<<<<< HEAD
       body: JSON.stringify({ correo, contraseña }) // Enviamos con Mayúscula
     });
     
@@ -96,23 +56,12 @@ async function login() {
     if (data.ok) {
       // IMPORTANTE: Guardamos el usuario que viene del servidor
       loggedUser = data.user; 
-=======
-      body: JSON.stringify({ correo, contrasena, ['contrase\u00f1a']: contrasena })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      loggedUser = data.user;
->>>>>>> origin/main
       afterLogin();
     } else {
       el('loginMsg').textContent = data.message;
     }
   } catch (err) {
-<<<<<<< HEAD
     el('loginMsg').textContent = 'Error de conexión';
-=======
-    el('loginMsg').textContent = 'Error de conexion con el servidor';
->>>>>>> origin/main
     console.error(err);
   }
 }
@@ -122,10 +71,7 @@ function afterLogin() {
   el('btnLogout').classList.remove('hidden');
   el('btnInicio').classList.add('hidden');
 
-<<<<<<< HEAD
   // Ajustado para usar la propiedad 'role' que envía tu backend
-=======
->>>>>>> origin/main
   if (loggedUser.role === 'admin') {
     el('btnPanel').classList.remove('hidden');
     el('btnCart').classList.add('hidden');
@@ -137,54 +83,33 @@ function afterLogin() {
   }
 }
 
-<<<<<<< HEAD
 function logout(){
-=======
-function logout() {
->>>>>>> origin/main
   loggedUser = null;
   el('btnCart').classList.add('hidden');
   el('btnLogout').classList.add('hidden');
   el('btnPanel').classList.add('hidden');
   el('btnInicio').classList.remove('hidden');
-<<<<<<< HEAD
   hideAll(); show('landing');
-=======
-  hideAll();
-  show('landing');
->>>>>>> origin/main
 }
 
 /* ---------------- Registro ---------------- */
 async function register() {
   const NombreC = el('regUser').value.trim();
   const Correo = el('regEmail').value.trim();
-<<<<<<< HEAD
   const Contraseña = el('regPass').value;
 
   try {
-
     const res = await fetch(`${API_BASE}/api/users/register`, { 
-=======
-  const Contrasena = el('regPass').value;
-  try {
-    const res = await fetch(`${API_BASE}/api/users/register`, {
->>>>>>> origin/main
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         NombreC,
         Correo,
-<<<<<<< HEAD
         Contraseña,
-=======
-        Contrase\u00f1a: Contrasena,
->>>>>>> origin/main
         Telefono: el('regTelefono')?.value || '',
         Direccion: el('regDireccion')?.value || ''
       })
     });
-<<<<<<< HEAD
 
     const data = await res.json();
     console.log("Respuesta servidor registro:", data); 
@@ -202,59 +127,20 @@ async function register() {
   }
 }
 
-=======
-    const data = await res.json();
-    el('regMsg').textContent = data.message;
-    if (data.ok) {
-      setTimeout(showLogin, 1000);
-    }
-  } catch (err) {
-    el('regMsg').textContent = 'Error de conexion con el servidor';
-    console.error(err);
-  }
-}
-
-/* ---------------- Productos (Cliente) ---------------- */
-async function cargarProductos() {
-  try {
-    const res = await fetch(`${API_BASE}/api/products`);
-    const data = await res.json();
-    if (data.ok && Array.isArray(data.products)) {
-      productos = data.products;
-    } else if (Array.isArray(data)) {
-      productos = data;
-    } else {
-      productos = [];
-    }
-  } catch (err) {
-    console.warn('Backend no disponible. Mostrando catalogo vacio...');
-    productos = [];
-    renderCatalog();
-  }
-}
->>>>>>> origin/main
-
 function renderCatalog() {
   const container = el('catalogGrid'); 
   if (!container) return;
   container.innerHTML = '';
-<<<<<<< HEAD
 
   productos.forEach(p => {
     const card = document.createElement('article');
     card.className = 'producto';
 
-=======
-  productos.forEach(p => {
-    const card = document.createElement('article');
-    card.className = 'producto';
->>>>>>> origin/main
     // LIMPIEZA DE RUTA: 
     // Si p.Imagen ya trae "uploads/", lo quitamos para no repetirlo.
     // Luego construimos la URL completa: BASE + uploads + nombre_imagen
     const nombreImagen = p.Imagen ? p.Imagen.replace('uploads/', '').replace('/uploads/', '') : '';
     const urlFinal = `${API_BASE}/uploads/${nombreImagen}`;
-<<<<<<< HEAD
 
     card.innerHTML = `
   <img src="${urlFinal}" alt="${p.Nombre}" style="width:100%; height:250px; object-fit:cover; border-radius: 8px;">
@@ -263,33 +149,11 @@ function renderCatalog() {
   <button onclick="abrirModalProducto(${p.IdProducto})">Ver detalles</button>
 `;
       
-=======
-    card.innerHTML = `
-      <img src="${urlFinal}" 
-           alt="${p.Nombre}" 
-           style="width:100%; height:200px; object-fit:cover; border-radius: 8px;"
-           onerror="this.src='https://via.placeholder.com/400x300?text=Imagen+no+disponible'">
-      <h3>${p.Nombre}</h3>
-      <p class="muted">Color: ${p.Color || 'N/A'}</p>
-      <p><strong>$${p.Precio}</strong></p>
-      <p>Stock: ${p.Stock}</p>
-      <div class="meta">
-        ${loggedUser?.role === 'cliente' ? `
-          <input id="cantidad_${p.IdProducto}" type="number" min="1" max="${p.Stock}" 
-                 value="${p.Stock > 0 ? 1 : 0}" style="width:60px">
-          <button ${p.Stock === 0 ? 'class="agotado" disabled' : ''} 
-                  onclick="addToCart(${p.IdProducto})">
-            ${p.Stock === 0 ? 'Agotado' : 'Agregar'}
-          </button>
-        ` : ''}
-      </div>`;
->>>>>>> origin/main
     container.appendChild(card);
   });
 }
 
 /* ---------------- Carrito ---------------- */
-<<<<<<< HEAD
 function mostrarCarrito(){ hideAll(); show('cart'); renderCarrito(); }
 function renderCarrito() {
     const container = document.getElementById('cartContents');
@@ -357,97 +221,13 @@ function eliminarDelCarrito(index){
   carrito.splice(index,1); renderCatalog(); renderCarrito();
 }
 
-
 /* ---------------- Pagos con Stripe ---------------- */
 async function handlePayment() {
-=======
-function mostrarCarrito() { hideAll(); show('cart'); renderCarrito(); }
-
-function renderCarrito() {
-  const container = el('cartContents');
-  const footer = el('cartFooter');
-  container.innerHTML = '';
-  footer.innerHTML = '';
-
-  if (carrito.length === 0) {
-    container.innerHTML = '<p>Tu carrito esta vacio</p>';
-    return;
-  }
-
-  let total = 0;
-  carrito.forEach((item, index) => {
-    const subtotal = item.Precio * item.Cantidad;
-    total += subtotal;
-    const div = document.createElement('div');
-    div.className = 'cart-item';
-    div.innerHTML = `
-      <span><strong>${item.Nombre}</strong> - $${item.Precio}</span>
-      <input type="number" min="1" value="${item.Cantidad}" style="width:50px" onchange="updateCantidad(${index},this.value)">
-      <span>Subtotal: $${subtotal}</span>
-      <button onclick="eliminarDelCarrito(${index})">Eliminar</button>`;
-    container.appendChild(div);
-  });
-
-  footer.innerHTML = `<p><strong>Total: $${total}</strong></p>
-    <button onclick="finalizarCompra()">Finalizar Compra</button>`;
-}
-
-function addToCart(id) {
-  if (!loggedUser) { alert('Debes iniciar sesion'); return; }
-  const p = productos.find(x => getProductId(x) === id);
-  if (!p) { alert('Producto no encontrado'); return; }
-
-  const qty = parseInt(el(`cantidad_${id}`)?.value || 1, 10);
-  if (getProductStock(p) < qty) { alert('Stock insuficiente'); return; }
-
-  const item = carrito.find(i => getProductId(i) === id);
-  if (item) item.Cantidad += qty;
-  else carrito.push({ ...p, Cantidad: qty });
-
-  p.Stock = getProductStock(p) - qty;
-  renderCatalog();
-  renderCarrito();
-  showToast(`${p.Nombre} agregado (${qty})`);
-}
-
-function updateCantidad(index, nuevaCantidad) {
-  nuevaCantidad = parseInt(nuevaCantidad, 10);
-  if (isNaN(nuevaCantidad) || nuevaCantidad < 1) return;
-
-  const item = carrito[index];
-  const producto = productos.find(p => getProductId(p) === getProductId(item));
-  if (!producto) return;
-
-  const diff = nuevaCantidad - item.Cantidad;
-  if (diff > 0 && getProductStock(producto) < diff) {
-    alert('No hay suficiente stock');
-    renderCarrito();
-    return;
-  }
-
-  item.Cantidad = nuevaCantidad;
-  producto.Stock = getProductStock(producto) - diff;
-  renderCatalog();
-  renderCarrito();
-}
-
-function eliminarDelCarrito(index) {
-  const item = carrito[index];
-  const producto = productos.find(p => getProductId(p) === getProductId(item));
-  if (producto) producto.Stock = getProductStock(producto) + item.Cantidad;
-  carrito.splice(index, 1);
-  renderCatalog();
-  renderCarrito();
-}
-
-async function finalizarCompra() {
->>>>>>> origin/main
   if (carrito.length === 0) {
     alert('No hay productos en el carrito');
     return;
   }
 
-<<<<<<< HEAD
   try {
     // 1. Enviamos el carrito y el ID del usuario al backend
     // Esto crea la sesión y prepara la "metadata" para el Webhook
@@ -567,37 +347,6 @@ function addToCartFromModal(id) {
 function cerrarModal() {
     document.getElementById('modalProducto').classList.add('hidden');
 }
-=======
-  const venta = {
-    IdCliente: loggedUser?.id || 0,
-    productos: carrito.map(i => ({ IdProducto: getProductId(i), Cantidad: i.Cantidad }))
-  };
-
-  try {
-    const res = await fetch(`${API_BASE}/api/sales`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(venta)
-    });
-
-    const data = await res.json();
-
-    if (res.ok && data.ok) {
-      carrito = [];
-      await cargarProductos();
-      renderCatalog();
-      renderCarrito();
-      showToast('Compra registrada correctamente');
-    } else {
-      alert('Error al registrar la compra: ' + (data.message || 'Desconocido'));
-    }
-  } catch (err) {
-    alert('Error de conexion al registrar compra');
-    console.error(err);
-  }
-}
-
->>>>>>> origin/main
 /* ---------------- Admin: Inventario ---------------- */
 const formProducto = el('formProducto');
 let editingId = null;
@@ -611,13 +360,9 @@ formProducto.addEventListener('submit', async e => {
   const Stock = parseInt(el('stock').value);
   const Precio = parseFloat(el('precio').value);
   const Color = el('color').value.trim();
-<<<<<<< HEAD
   
   // CORRECCIÓN: Captura el archivo real, no el valor del input
   const ImagenFile = el('imagen').files[0]; 
-=======
-  const Imagen = el('imagen').files[0];
->>>>>>> origin/main
 
   const formData = new FormData();
   formData.append('Nombre', Nombre);
@@ -626,7 +371,6 @@ formProducto.addEventListener('submit', async e => {
   formData.append('Stock', Stock);
   formData.append('Precio', Precio);
   formData.append('Color', Color);
-<<<<<<< HEAD
   
   // Solo agrega la imagen si el usuario seleccionó una nueva
   if (ImagenFile) {
@@ -655,28 +399,6 @@ formProducto.addEventListener('submit', async e => {
     formProducto.reset();
     await cargarProductos(); // recarga la lista de productos
     showAdminPanel(); // <-- FORZAMOS que se quede en el panel
-=======
-  if (Imagen) formData.append('Imagen', Imagen);
-
-  try {
-    if (editingId) {
-      await fetch(`${API_BASE}/api/products/${editingId}`, {
-        method: 'PUT',
-        body: formData
-      });
-    } else {
-      await fetch(`${API_BASE}/api/products`, {
-        method: 'POST',
-        body: formData
-      });
-    }
-
-    editingId = null;
-    alert(editingId ? 'Producto actualizado' : 'Producto agregado con éxito');
-    formProducto.reset();
-    await cargarProductos();
-    showAdminPanel();
->>>>>>> origin/main
     showAdminSection('inventario');
   } catch (err) {
     console.error(err);
@@ -684,7 +406,6 @@ formProducto.addEventListener('submit', async e => {
   }
 });
 
-<<<<<<< HEAD
 function renderAdminList(){
   const container=el('adminList'); container.innerHTML='';
   productos.forEach(p=>{
@@ -694,46 +415,24 @@ function renderAdminList(){
       <p>Stock: ${p.Stock} | $${p.Precio}</p>
       <button onclick="editProducto(${p.IdProducto})">Editar</button>
       <button onclick="deleteProducto(${p.IdProducto})">Eliminar</button>`;
-=======
-function renderAdminList() {
-  const container = el('adminList');
-  container.innerHTML = '';
-  productos.forEach(p => {
-    const productId = getProductId(p);
-    const card = document.createElement('div');
-    card.className = 'producto';
-    card.innerHTML = `
-      <h4>${p.Nombre}</h4>
-      <p>Stock: ${p.Stock} | $${p.Precio}</p>
-      <button onclick="editProducto(${productId})">Editar</button>
-      <button onclick="deleteProducto(${productId})">Eliminar</button>`;
->>>>>>> origin/main
     container.appendChild(card);
   });
 }
 
-<<<<<<< HEAD
 function editProducto(id){
 const p = productos.find(x => x.IdProducto === id);
-=======
-function editProducto(id) {
-  const p = productos.find(prod => getProductId(prod) === id);
-  if (!p) return;
->>>>>>> origin/main
   el('nombre').value = p.Nombre;
   el('talla').value = p.Talla;
   el('categoria').value = p.Categoria;
   el('stock').value = p.Stock;
   el('precio').value = p.Precio;
   el('color').value = p.Color;
-<<<<<<< HEAD
  const imgPreview = el('imgPreview'); 
     if(imgPreview) imgPreview.src = `${API_BASE}/uploads/${p.Imagen}`;
     
     editingId = id;
 
 }
-
 
 async function deleteProducto(id) {
   if (!confirm('¿Eliminar producto?')) return;
@@ -757,48 +456,15 @@ async function deleteProducto(id) {
     }
   } catch (err) {
     alert('Error de conexión al eliminar producto');
-=======
-  editingId = id;
-}
-
-async function deleteProducto(id) {
-  if (!confirm('Eliminar producto?')) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/products/${id}`, {
-      method: 'DELETE'
-    });
-
-    const data = await res.json();
-
-    if (!data.ok) {
-      alert('Error al eliminar producto: ' + (data.message || 'Desconocido'));
-      return;
-    }
-
-    await cargarProductos();
-    renderAdminList();
-  } catch (err) {
-    alert('Error al eliminar producto');
->>>>>>> origin/main
     console.error(err);
   }
 }
-
-<<<<<<< HEAD
 
 /* ---------------- Admin: Proveedores ---------------- */
 const formProveedor=el('formProveedor');
 formProveedor.addEventListener('submit', async e=>{
   e.preventDefault();
   const prov={
-=======
-/* ---------------- Admin: Proveedores ---------------- */
-const formProveedor = el('formProveedor');
-formProveedor.addEventListener('submit', async e => {
-  e.preventDefault();
-  const prov = {
->>>>>>> origin/main
     Nombre: el('provNombre').value,
     Telefono: el('provTelefono').value,
     Correo: el('provEmail').value,
@@ -817,7 +483,6 @@ formProveedor.addEventListener('submit', async e => {
   }
 });
 
-<<<<<<< HEAD
 async function renderProveedores(){
   try {
     const res = await fetch(`${API_BASE}/api/providers`);
@@ -827,18 +492,6 @@ async function renderProveedores(){
       return;
     }
     proveedores = data.providers;
-=======
-async function renderProveedores() {
-  try {
-    const res = await fetch(`${API_BASE}/api/providers`);
-    const data = await res.json();
-    if (!data.ok) {
-      alert('Error al cargar proveedores');
-      return;
-    }
-
-    proveedores = data.providers || data.provider || [];
->>>>>>> origin/main
     const container = el('listaProveedores');
     container.innerHTML = '';
     proveedores.forEach(p => {
@@ -852,24 +505,15 @@ async function renderProveedores() {
     console.error(err);
   }
 }
-<<<<<<< HEAD
 async function deleteProveedor(id){
   if(!confirm('¿Eliminar proveedor?')) return;
   try {
     await fetch(`${API_BASE}/providers/${id}`, { method: 'DELETE' });
-=======
-
-async function deleteProveedor(id) {
-  if (!confirm('Eliminar proveedor?')) return;
-  try {
-    await fetch(`${API_BASE}/api/providers/${id}`, { method: 'DELETE' });
->>>>>>> origin/main
     renderProveedores();
   } catch (err) {
     alert('Error al eliminar proveedor');
   }
 }
-<<<<<<< HEAD
 /**
  * Renderiza la lista de ventas filtradas por fecha
  */
@@ -918,28 +562,9 @@ function renderCatalogAdmin(){
         <button onclick="editProducto(${p.IdProducto})">Editar</button>
         <button class="secondary" onclick="deleteProducto(${p.IdProducto})">Eliminar</button>
       </div>`;
-=======
-
-/* ---------------- Admin: Catalogo ---------------- */
-function renderCatalogAdmin() {
-  const container = el('catalogAdmin');
-  container.innerHTML = '';
-  productos.forEach(p => {
-    const productId = getProductId(p);
-    const card = document.createElement('div');
-    card.className = 'producto';
-    card.innerHTML = `
-      <img src="${p.Imagen}" alt="${p.Nombre}" style="height:150px;object-fit:cover">
-      <h4>${p.Nombre}</h4>
-      <p>Stock: ${p.Stock} | $${p.Precio}</p>
-      <button onclick="editProducto(${productId})">Editar</button>
-      <button onclick="deleteProducto(${productId})">Eliminar</button>`;
->>>>>>> origin/main
     container.appendChild(card);
   });
 }
-
-<<<<<<< HEAD
 
 /* ---------------- Admin: Dashboard de Estadísticas ---------------- */
 async function renderEstadisticas() {
@@ -961,8 +586,8 @@ async function renderEstadisticas() {
         <img src="${urlImg}" style="width:100px; height:100px; object-fit:cover; border-radius:10px;" onerror="this.src='https://via.placeholder.com/100?text=Sin+Foto'">
         <div>
           <strong style="font-size:1.2rem; color:var(--primary);">${dataEstrella.producto.prenda}</strong><br>
-          <span>🔥 Vendidos: <b>${dataEstrella.producto.unidades_vendidas}</b> unidades</span><br>
-          <span style="color:green; font-weight:bold;">💰 Generado: $${dataEstrella.producto.total_generado}</span>
+          <span>Vendidos: <b>${dataEstrella.producto.unidades_vendidas}</b> unidades</span><br>
+          <span style="color:green; font-weight:bold;">Generado: $${dataEstrella.producto.total_generado}</span>
         </div>
       `;
       if(contCliente) contCliente.innerHTML = htmlContent;
@@ -1000,8 +625,6 @@ async function renderEstadisticas() {
 }
 
 /*------------------ Admin: Pagos realizados --------------------*/
-=======
->>>>>>> origin/main
 async function renderPagos() {
   const container = el('pagosLista');
   const totalEl = el('totalPagos');
@@ -1009,25 +632,16 @@ async function renderPagos() {
   totalEl.textContent = 'Total de pagos: $0';
 
   try {
-<<<<<<< HEAD
     const res = await fetch(`${API_BASE}/api/sales`);
     const pagos = await res.json(); // Asegúrate de que esto sea el array de ventas
 
     if(!Array.isArray(pagos) || pagos.length === 0) {
-=======
-    const res = await fetch(`${API_BASE}/api/pagos`);
-    const data = await res.json();
-    const pagos = data.pagos || [];
-
-    if (!data.ok || pagos.length === 0) {
->>>>>>> origin/main
       container.innerHTML = '<p>No hay pagos registrados</p>';
       return;
     }
 
     let total = 0;
     pagos.forEach(p => {
-<<<<<<< HEAD
       // 1. Usa p.Total (mayúscula) para que coincida con el backend
       total += parseFloat(p.Total || 0); 
       
@@ -1042,16 +656,6 @@ async function renderPagos() {
     });
 
     totalEl.textContent = `Total de pagos: $${total.toFixed(2)}`;
-=======
-      total += Number(p.Monto || 0);
-      const div = document.createElement('div');
-      div.className = 'pago-item';
-      div.textContent = `${new Date(p.Fecha).toLocaleDateString()} - Cliente: ${p.IdCliente} - Monto: $${p.Monto} - Estado: ${p.Estado}`;
-      container.appendChild(div);
-    });
-
-    totalEl.textContent = `Total de pagos: $${total}`;
->>>>>>> origin/main
   } catch (err) {
     console.error(err);
     container.innerHTML = '<p>Error al cargar los pagos</p>';
@@ -1059,7 +663,6 @@ async function renderPagos() {
 }
 
 /* ---------------- Toast ---------------- */
-<<<<<<< HEAD
 function showToast(msg){ const t=el('cartMessage'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2000); }
 
 /* ---------------- Init ---------------- */
@@ -1109,8 +712,8 @@ async function cargarMasVendido() {
              onerror="this.src='https://via.placeholder.com/100?text=Top'">
         <div>
           <strong style="font-size:1.2rem; display:block; margin-bottom:4px;">${data.producto.prenda}</strong>
-          <span style="font-size:0.9rem; color:#555;">🔥 Unidades vendidas: <b>${data.producto.unidades_vendidas}</b></span><br>
-          <span style="color:green; font-weight:bold; font-size:1.1rem;">💰 Ganancia: $${data.producto.total_generado}</span>
+          <span style="font-size:0.9rem; color:#555;">Unidades vendidas: <b>${data.producto.unidades_vendidas}</b></span><br>
+          <span style="color:green; font-weight:bold; font-size:1.1rem;">Ganancia: $${data.producto.total_generado}</span>
         </div>
       `;
       
@@ -1131,9 +734,8 @@ async function filtrarVentas() {
     
     if (data.ok) {
       // Actualizamos los números en los cuadros del Admin
-    el('dashIngresosPeriodo').textContent = `$${data.ingresos || 0}`;
-el('dashPedidosPeriodo').textContent = data.pedidos || 0;
-      
+      el('dashIngresosPeriodo').textContent = `$${data.ingresos || 0}`;
+      el('dashPedidosPeriodo').textContent = data.pedidos || 0;    
       // Si el backend te manda la lista de ventas de ese día, puedes renderizarla aquí
       renderListaVentas(data.ventasDetalle || []);
     }
@@ -1141,8 +743,6 @@ el('dashPedidosPeriodo').textContent = data.pedidos || 0;
     console.error("Error filtrando ventas:", err);
   }
 }
-
-
 
 function renderEstrellas(calificacion) {
   const total = 5;
@@ -1153,15 +753,3 @@ function renderEstrellas(calificacion) {
   return `<span style="color: #FFD700; font-size: 1.2rem;">${estrellas}</span>`;
 
 }
-=======
-function showToast(msg) {
-  const t = el('cartMessage');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, 2000);
-}
-
-/* ---------------- Init ---------------- */
-cargarProductos();
-showLanding();
->>>>>>> origin/main
