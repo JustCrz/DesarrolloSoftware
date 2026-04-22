@@ -1,7 +1,6 @@
 /**
  * @module SalesController
  */
-<<<<<<< HEAD
 const pool = require('../bd');
 
 /**
@@ -20,72 +19,37 @@ async function getAllSales(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, message: 'Error al obtener ventas' });
-=======
-
-const pool = require('../bd');
-
-/**
- * Obtener ventas
- * @async
- * @function getSales
- * @param {Object} req Request de Express
- * @param {Object} res Response de Express
- * @returns {Promise<Object>} Respuesta HTTP con pedidos
- */
-async function getSales(req, res) {
-  try {
-    const [pedidos] = await pool.query(
-      `
-      SELECT p.IdPedido, p.IdCliente, c.NombreC, p.Fecha, p.Total, p.Estado
-      FROM pedido p
-      JOIN cliente c ON p.IdCliente = c.IdCliente
-      ORDER BY p.Fecha DESC
-    `
-    );
-
-    for (const pedido of pedidos) {
-      const [productos] = await pool.query(
-        `
-        SELECT pp.IdProducto, pr.Nombre, pp.Cantidad, pr.Precio
-        FROM pedidoproducto pp
-        JOIN producto pr ON pp.IdProducto = pr.IdProducto
-        WHERE pp.IdPedido = ?
-      `,
-        [pedido.IdPedido]
-      );
-      pedido.productos = productos;
-    }
-
-    return res.json({ ok: true, pedidos });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ ok: false, message: 'Error al obtener pedidos' });
->>>>>>> origin/main
   }
 }
 
+
 /**
-<<<<<<< HEAD
- * Obtener detalle de una venta específica
+ * Obtener detalle de una venta específica (Actualizada para el Modal)
  */
 async function getSaleDetail(req, res) {
   const { id } = req.params;
   try {
     const sql = `
-      SELECT pp.*, prod.Nombre 
+      SELECT 
+        pp.Cantidad, 
+        prod.Nombre AS NombreProducto, 
+        prod.Precio, 
+        prod.Imagen, 
+        ped.Total AS TotalPedido
       FROM pedidoproducto pp
-      JOIN producto prod ON pp.IdProducto = prod.IdProducto
+      JOIN producto prod ON pp.IdProducto = prod.IdProducto -- <--- AQUÍ: "producto" en singular
+      JOIN pedido ped ON pp.IdPedido = ped.IdPedido
       WHERE pp.IdPedido = ?
     `;
     const [rows] = await pool.query(sql, [id]);
-    res.json({ ok: true, detalle: rows });
+    res.json(rows); 
   } catch (err) {
-    res.status(500).json({ ok: false, message: 'Error al obtener detalle' });
+    console.error("Error en la consulta:", err.message);
+    res.status(500).json({ ok: false, message: 'Error al consultar la tabla producto' });
   }
 }
-
 /**
- * Crear venta usando TRANSACCIONES (Para llamadas desde la API)
+ * Crear venta usando TRANSACCIONES 
  */
 async function createSale(req, res) {
   const { IdCliente, productos } = req.body;
@@ -93,7 +57,7 @@ async function createSale(req, res) {
     await processSaleInternally(IdCliente, productos);
     res.status(201).json({ ok: true, message: 'Venta registrada con éxito' });
   } catch (err) {
-    console.error('❌ Error en createSale:', err.message);
+    console.error(' Error en createSale:', err.message);
     res.status(400).json({ ok: false, message: err.message });
   }
 }
@@ -129,6 +93,11 @@ async function processSaleInternally(IdCliente, productos) {
             [IdCliente, totalVenta, 'Pagado']
         );
         const idPedido = pedidoRes.insertId;
+        // Dentro de processSaleInternally, después de obtener idPedido:
+await connection.query(
+    'INSERT INTO pago (IdPedido, MetodoPago, Monto, Fecha, Estado) VALUES (?, ?, ?, NOW(), ?)',
+    [idPedido, 'Stripe', totalVenta, 'Completado']
+);
 
         // 3. Registrar productos y descontar stock
         for (let item of productos) {
@@ -143,75 +112,30 @@ async function processSaleInternally(IdCliente, productos) {
         }
 
         await connection.commit();
-        console.log("✅ Venta procesada correctamente. ID Pedido:", idPedido);
+        console.log(" Venta procesada correctamente. ID Pedido:", idPedido);
     } catch (err) {
         if (connection) await connection.rollback();
-        console.error('❌ Error crítico en processSaleInternally:', err.message);
+        console.error('Error crítico en processSaleInternally:', err.message);
         throw err;
     } finally {
         if (connection) connection.release();
     }
+    
 }
+exports.updateStatus = async (req, res) => {
+    const { id } = req.params;
+    const { nuevoEstado } = req.body; // Ejemplo: 'Preparando', 'En Camino'
+    
+    try {
+        await db.query('UPDATE pedido SET Estado = ? WHERE IdPedido = ?', [nuevoEstado, id]);
+        res.json({ message: "Estado actualizado con éxito" });
+    } catch (error) {
+        res.status(500).json({ error: "Error al actualizar el estado" });
+    }
+};
 
 // Exportamos todas las funciones necesarias
 exports.getAllSales = getAllSales;
 exports.createSale = createSale;
 exports.getSaleDetail = getSaleDetail;
 exports.processSaleInternally = processSaleInternally;
-=======
- * Registrar una venta
- * @async
- * @function registerSale
- * @param {Object} req Request de Express
- * @param {Object} res Response de Express
- * @returns {Promise<Object>} Respuesta HTTP de registro
- */
-async function registerSale(req, res) {
-  try {
-    const idCliente = req.body.IdCliente || req.body.usuarioId;
-    const productos = req.body.productos || req.body.items || [];
-    const estado = req.body.Estado;
-
-    if (!idCliente || !Array.isArray(productos) || productos.length === 0) {
-      return res.status(400).json({ ok: false, message: 'Datos de venta incompletos' });
-    }
-
-    let total = 0;
-    for (const p of productos) {
-      const idProducto = p.IdProducto || p.ProductoId;
-      const cantidad = p.Cantidad || p.cantidad;
-
-      if (!idProducto || !cantidad) continue;
-
-      const [rows] = await pool.query('SELECT Precio FROM producto WHERE IdProducto = ?', [idProducto]);
-      if (rows.length === 0) continue;
-
-      total += rows[0].Precio * cantidad;
-      p.Precio = rows[0].Precio;
-      p.IdProducto = idProducto;
-      p.Cantidad = cantidad;
-    }
-
-    const [result] = await pool.query(
-      'INSERT INTO pedido (IdCliente, Fecha, Total, Estado) VALUES (?, NOW(), ?, ?)',
-      [idCliente, total, estado || 'Pendiente']
-    );
-    const idPedido = result.insertId;
-
-    for (const p of productos) {
-      await pool.query(
-        'INSERT INTO pedidoproducto (IdPedido, IdProducto, Cantidad) VALUES (?, ?, ?)',
-        [idPedido, p.IdProducto, p.Cantidad]
-      );
-    }
-
-    return res.status(201).json({ ok: true, IdPedido: idPedido, productos });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ ok: false, message: 'Error al registrar pedido' });
-  }
-}
-
-exports.getSales = getSales;
-exports.registerSale = registerSale;
->>>>>>> origin/main

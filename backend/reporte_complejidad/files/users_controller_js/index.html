@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - users.controller.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/plato.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="https://github.com/the-simian/es6-plato">ES6 Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+      <li class="active">
+        <a href="display.html">Summary Display</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>users.controller.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">54.60</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">94</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">28.65</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.92</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">/**
+ * @module UsersController
+ */
+const pool = require(&#039;../bd&#039;);
+const bcrypt = require(&#039;bcrypt&#039;);
+
+/**
+ * Obtener todos los clientes registrados (Para el Panel Admin)
+ */
+async function getAllUsers(req, res) {
+  try {
+    const [rows] = await pool.query(&#039;SELECT IdCliente, NombreC, Correo, Telefono, Direccion FROM cliente&#039;);
+    res.json({ ok: true, users: rows });
+  } catch (err) {
+    console.error(&quot;Error al obtener usuarios:&quot;, err);
+    res.status(500).json({ ok: false, message: &#039;Error al obtener usuarios&#039; });
+  }
+}
+
+/**
+ * Registrar un nuevo cliente con contraseña encriptada
+ */
+async function registerUser(req, res) {
+  try {
+    const { NombreC, Correo, Telefono, Direccion } = req.body;
+    const passwordRaw = req.body[&#039;Contraseña&#039;] || req.body.Contrasena || req.body.password;
+
+    if (!NombreC || !Correo || !passwordRaw) {
+      return res.status(400).json({ ok: false, message: &#039;Nombre, correo y contraseña son obligatorios&#039; });
+    }
+
+    const [existing] = await pool.query(&#039;SELECT * FROM cliente WHERE Correo = ?&#039;, [Correo]);
+    if (existing.length &gt; 0) {
+      return res.status(400).json({ ok: false, message: &#039;Este correo ya está registrado&#039; });
+    }
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(passwordRaw, saltRounds);
+
+    const [result] = await pool.query(
+      &#039;INSERT INTO cliente (NombreC, Correo, Contraseña, Telefono, Direccion) VALUES (?, ?, ?, ?, ?)&#039;,
+      [NombreC, Correo, hashedPassword, Telefono || null, Direccion || null]
+    );
+
+    res.status(201).json({ ok: true, message: &#039;Usuario registrado exitosamente&#039;, id: result.insertId });
+  } catch (err) {
+    console.error(&#039;Error en registro:&#039;, err);
+    res.status(500).json({ ok: false, message: &#039;Error interno del servidor&#039; });
+  }
+}
+
+/**
+ * Iniciar sesión
+ */
+async function loginUser(req, res) {
+  const { Correo, Contraseña } = req.body;
+  try {
+    const [results] = await pool.query(&#039;SELECT * FROM cliente WHERE Correo = ?&#039;, [Correo]);
+    if (results.length === 0) {
+      return res.status(401).json({ ok: false, message: &#039;Usuario no encontrado&#039; });
+    }
+
+    const user = results[0];
+    const match = await bcrypt.compare(Contraseña, user.Contraseña);
+    if (!match) {
+      return res.status(401).json({ ok: false, message: &#039;Contraseña incorrecta&#039; });
+    }
+
+    delete user.Contraseña; // Seguridad: no enviar hash al frontend
+    res.json({ ok: true, user });
+  } catch (err) {
+    console.error(&quot;Error en login:&quot;, err);
+    res.status(500).json({ ok: false, message: &#039;Error al iniciar sesión&#039; });
+  }
+}
+
+/**
+ * Eliminar un cliente
+ */
+async function deleteUser(req, res) {
+  const { id } = req.params;
+  try {
+    await pool.query(&#039;DELETE FROM cliente WHERE IdCliente = ?&#039;, [id]);
+    res.json({ ok: true, message: &#039;Usuario eliminado&#039; });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: &#039;No se puede eliminar un cliente con historial de compras&#039; });
+  }
+}
+
+exports.getAllUsers = getAllUsers;
+exports.registerUser = registerUser;
+exports.loginUser = loginUser;
+exports.deleteUser = deleteUser;
+</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ complexity.cyclomatic }} <br>
+    Length : {{ complexity.halstead.length }} <br>
+    Difficulty : {{ complexity.halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ complexity.halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

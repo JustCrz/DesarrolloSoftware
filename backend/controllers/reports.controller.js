@@ -57,7 +57,7 @@ async function getDailySummary(req, res) {
  * Obtener ventas filtradas por una fecha específica
  */
 async function getSalesByDate(req, res) {
-  const { fecha } = req.query; // Ejemplo: ?fecha=2026-03-05
+  const { fecha } = req.query; 
   try {
     const [rows] = await pool.query(`
       SELECT p.*, c.NombreC 
@@ -73,7 +73,7 @@ async function getSalesByDate(req, res) {
   }
 }
 
-// Exportamos las funciones para que el router pueda reconocerlas
+// Funciones exportadas para que el router pueda reconocerlas
 exports.getTopProduct = getTopProduct;
 exports.getDailySummary = getDailySummary;
 exports.getSalesByDate = getSalesByDate;

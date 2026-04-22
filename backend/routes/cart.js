@@ -1,26 +1,25 @@
 const express = require('express');
 const router = express.Router();
-<<<<<<< HEAD
-// Importamos el controlador donde movimos toda tu lógica anterior
+// Importamos el controlador 
 const cartController = require('../controllers/cart.controller');
 
 /**
  * @route GET /api/cart/:idCliente
- * @desc  Obtener el carrito con productos (Usa tu lógica de JOIN anterior)
+ * @desc  Obtener el carrito con productos 
  */
 router.get('/:idCliente', cartController.getCartClient);
 
 /**
  * @route POST /api/cart/:idCliente
- * @desc  Agregar o actualizar cantidad (Usa tu lógica de actualizarTotalCarrito)
+ * @desc  Agregar o actualizar cantidad 
  */
 router.post('/:idCliente', cartController.addProductToCart);
 
 /**
  * @route PUT /api/cart/:idCliente
- * @desc  Actualizar cantidad manual (Soporta eliminar si cantidad <= 0)
+ * @desc  Actualizar cantidad manual 
  */
-router.put('/:idCliente', cartController.updateProductQuantity); // Asegúrate que este nombre esté en el controller
+router.put('/:idCliente', cartController.updateProductQuantity); 
 
 /**
  * @route DELETE /api/cart/:idCliente/:idProducto
@@ -29,13 +28,3 @@ router.put('/:idCliente', cartController.updateProductQuantity); // Asegúrate q
 router.delete('/:idCliente/:idProducto', cartController.removeProductFromCart);
 
 module.exports = router;
-=======
-const cartController = require('../controllers/cart.controller');
-
-router.get('/:idCliente', cartController.getCartClient);
-router.post('/:idCliente', cartController.addProductToCart);
-router.delete('/:idCliente/:idProducto', cartController.removeProductFromCart);
-router.put('/:idCliente', cartController.updateProductQuantity);
-
-module.exports = router;
->>>>>>> origin/main

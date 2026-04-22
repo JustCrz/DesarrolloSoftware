@@ -1,15 +1,128 @@
 /* ==============================
    VARIABLES & BASE
 ================================ */
+/* --- Layout Principal --- */
+.main-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px; /* Catálogo flexible, Sidebar fijo */
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+@media (max-width: 900px) {
+    .main-layout {
+        grid-template-columns: 1fr; /* En móviles, el sidebar se pone abajo */
+    }
+}
+
+/* --- Banner (Hero) --- */
+.hero-card {
+    height: 400px;
+    background: linear-gradient(rgba(224, 138, 53, 0.2), rgba(0,0,0,0.4)), 
+                url('https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80');
+
+                
+    background-size: cover;
+    background-position: center;
+    border-radius: var(--radius);
+    position: relative;
+    color: rgba(238, 234, 158, 0.683);
+    display: flex;
+    align-items: center;
+    padding: 40px;
+}
+
+.hero-overlay h2 {
+    font-size: 38px;
+    margin: 10px 0;
+    line-height: 1.1;
+}
+
+.badge-new {
+    background: var(--accent);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.btn-hero {
+    background: rgba(237, 215, 181, 0.766) !important;
+    color: var(--text) !important;
+    padding: 12px 25px !important;
+    margin-top: 15px;
+}
+
+/* --- Paneles Laterales (Widgets) --- */
+.side-card {
+    background: rgba(209, 193, 142, 0.609);
+    padding: 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+    margin-bottom: 20px;
+}
+
+.side-card h4 {
+    margin-top: 0;
+    font-size: 14px;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+
+.news-item {
+    font-size: 13px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(237, 215, 181, 0.766)
+}
+
+/* --- Header Mejorado --- */
+.header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-modules {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.auth-group {
+    display: flex;
+    gap: 10px;
+    border-left: 1px solid #eee;
+    padding-left: 15px;
+}
+
+.btn-sm {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    box-shadow: none !important;
+}
+
+/* Asegura uniformidad en las imágenes del catálogo */
+.producto img, .catalog-img {
+    width: 100%;
+    height: 250px; /* Altura fija para mantener el grid ordenado */
+    object-fit: cover; /* Recorta la imagen para llenar el espacio sin deformarse */
+    border-radius: 14px;
+}
 :root{
-  --accent:#ff5c8a;
-  --accent-soft:#ffe1ea;
-  --accent-dark:#d81b60;
+  --primary: #333333;
+  --accent: #d4a373;
+  --border: #e9edc9;
+  --muted: #888888;
+  --accent:#c8a05b;
+  --accent-soft:#f7e988;
+  --accent-dark:#eeeecd;
 
   --text:#1f1f1f;
   --muted:#7a7a7a;
 
-  --bg:#f7f7fb;
+  --bg:#f2f27f;
   --card-bg:#ffffff;
 
   --radius:16px;
@@ -37,7 +150,7 @@ body{
    HEADER
 ================================ */
 header{
-  background:rgba(255,255,255,.85);
+  background:rgba(226, 197, 110, 0.599);
   backdrop-filter:blur(12px);
   border-bottom:1px solid #eee;
   position:sticky;
@@ -310,7 +423,6 @@ th{
   .producto img{
     height:200px;
   }
-<<<<<<< HEAD
 }
 /* ==============================
    DASHBOARD / ESTADÍSTICAS
@@ -586,6 +698,262 @@ input[type="number"] {
   color: var(--accent);
 }
 
-=======
+
+/* Clase para dar feedback visual mientras el JS carga datos */
+.loading-spinner {
+  border: 4px solid var(--accent-soft);
+  border-top: 4px solid var(--accent);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
 }
->>>>>>> origin/main
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.promo-card {
+    border: 2px solid #ff3e3e; /* Borde rojo llamativo */
+}
+
+.badge-promo {
+    background: #ff3e3e;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+/* Estilo para las nuevas Tarjetas de Pedido */
+.pedido-card {
+  border: 1px solid var(--border); /* El color beige suave de tu paleta */
+  border-radius: 12px;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: white;
+  transition: box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.pedido-card:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.pedido-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.pedido-numero {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.pedido-fecha {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* Badge de estado (Pagado) */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-badge.paid {
+  background: #E8F5E9; /* Un verde pastel suave */
+  color: #2E7D32; /* Texto verde oscuro legible */
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 15px 0;
+}
+
+.pedido-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.summary-label {
+  color: var(--muted);
+}
+
+.summary-total {
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.btn-detalles {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+}
+
+.btn-detalles {
+    margin-top: 10px;
+    width: 100%;
+    padding: 12px;
+    font-size: 0.9rem;
+    border-radius: 999px; /* Para que sea redondeado como los demás botones */
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-detalles:hover {
+    background: var(--accent);
+    color: white;
+}
+
+/* --- Estilos para el Rastreador de Pedidos (Stepper) --- */
+.stepper-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 30px 0;
+    position: relative;
+}
+
+/* Tarjetas de pedidos en el historial y admin */
+.pedido-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #eee;
+}
+
+.pedido-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+/* Ajustes para el modal de detalles */
+#modalBody {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.list-providers {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Botones de acción rápida */
+.btn-status {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-status:hover {
+    filter: brightness(1.1);
+}
+
+#mapaAdmin {
+  height: 500px;
+  width: 100%;
+  z-index: 1; /* Para que no se encime con los menús */
+}
+
+/* ==============================
+   LOGÍSTICA Y ENTREGAS (ADMIN)
+================================ */
+
+/* Contenedor de la sección de pedidos */
+#adminOrders {
+    background: #fdfaf5; /* Un tono crema muy ligero */
+    padding: 20px;
+    border-radius: var(--radius);
+}
+
+/* Tarjetas individuales en la lista de la izquierda */
+.card-entrega {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    border-left: 6px solid var(--accent); /* Marca de color de la tienda */
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.card-entrega:hover {
+    transform: translateX(8px); /* Efecto de desplazamiento al pasar el mouse */
+    box-shadow: var(--shadow-hover);
+    background: #fffdf9;
+}
+
+.card-entrega strong {
+    font-size: 1.1rem;
+    color: var(--primary);
+}
+
+.card-entrega small {
+    color: var(--muted);
+    font-weight: 500;
+}
+
+/* Estilo para el mapa para que se vea moderno */
+#mapaAdmin {
+    border-radius: 15px;
+    box-shadow: var(--shadow-soft);
+    border: 3px solid white; /* Efecto de marco */
+}
+
+/* Botón de estado dentro de la lista de entregas */
+.btn-status-map {
+    margin-top: 10px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+/* Ajuste de scrollbar para la lista de pedidos */
+#adminOrdersList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#adminOrdersList::-webkit-scrollbar-thumb {
+    background: var(--accent-soft);
+    border-radius: 10px;
+}
+
+#adminOrders {
+    display: flex !important; /* Asegura que el grid se active */
+    flex-direction: column;
+}
+
+#mapaAdmin {
+    min-height: 450px !important;
+    background: #f8f9fa; /* Para ver si el contenedor existe */
+    z-index: 1;
+}

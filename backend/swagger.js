@@ -12,24 +12,13 @@ const options = {
     },
     servers: [
       {
-<<<<<<< HEAD
         url: 'http://localhost:3000/api',
         description: 'Servidor local',
-=======
-        url: process.env.NODE_ENV === 'production'
-        ? 'https://desarrollosoftware.onrender.com/api'
-        : 'http://localhost:3000/api',
-        description: 'Servidor conectado',
->>>>>>> origin/main
       },
     ],
   },
   // Rutas donde buscar comentarios de documentación (opcional)
-<<<<<<< HEAD
   apis: ['./routes/*.js'],
-=======
-  apis: ['./swagger.js', './routes/*.js'],
->>>>>>> origin/main
 };
 
 // Generar especificación Swagger
@@ -62,11 +51,7 @@ module.exports = swaggerSpec;
 
 /**
  * @swagger
-<<<<<<< HEAD
  * /users/user:
-=======
- * /users:
->>>>>>> origin/main
  *   get:
  *     summary: Obtener todos los usuarios (solo prueba)
  *     tags: [Users]
@@ -359,7 +344,6 @@ module.exports = swaggerSpec;
  */
 
 /**
-<<<<<<< HEAD
  * CORTE DE CAJA
  */
 
@@ -393,8 +377,6 @@ module.exports = swaggerSpec;
  */
 
 /**
-=======
->>>>>>> origin/main
  * PAGOS
  */
 

@@ -52,14 +52,13 @@ exports.handleStripeWebhook = async (req, res) => {
         const items = JSON.parse(session.metadata.items);
         const idUsuario = session.metadata.idUsuario;
 
-        console.log('✅ Pago recibido, iniciando actualización de inventario...');
+        console.log(' Pago recibido, iniciando actualización de inventario...');
         
         try {
-            // Llamamos a tu lógica de ventas para descontar stock en MySQL
             await salesController.processSaleInternally(idUsuario, items);
-            console.log('📦 Inventario actualizado correctamente.');
+            console.log(' Inventario actualizado correctamente.');
         } catch (error) {
-            console.error('❌ Error fatal al actualizar base de datos:', error);
+            console.error(' Error fatal al actualizar base de datos:', error);
             return res.status(500).send('Error interno en la BD');
         }
     }

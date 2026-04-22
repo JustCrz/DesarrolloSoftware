@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - products.controller.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/plato.css" rel="stylesheet" type="text/css">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="https://github.com/the-simian/es6-plato">ES6 Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+      <li class="active">
+        <a href="display.html">Summary Display</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>products.controller.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">53.73</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">137</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">41.45</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.23</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">/**
+ * @module ProductsController
+ */
+const pool = require(&#039;../bd&#039;);
+const fs = require(&#039;fs&#039;);
+const path = require(&#039;path&#039;);
+
+/**
+ * Obtener todos los productos para el catálogo público
+ */
+async function getAllProducts(req, res) {
+  try {
+    const [rows] = await pool.query(&#039;SELECT * FROM producto&#039;);
+    res.json({ ok: true, products: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: &#039;Error al obtener productos&#039; });
+  }
+}
+
+/**
+ * Obtener productos detallados con el nombre de su proveedor (Para el Admin)
+ */
+async function getProductsWithProviders(req, res) {
+  try {
+    const sql = `
+      SELECT p.*, pr.Nombre as NombreProveedor
+      FROM producto p
+      LEFT JOIN ProductoProveedor pp ON p.IdProducto = pp.IdProducto
+      LEFT JOIN proveedores pr ON pp.IdProveedor = pr.IdProveedor
+    `;
+    const [rows] = await pool.query(sql);
+    res.json({ ok: true, products: rows });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: &#039;Error al obtener productos con proveedores&#039; });
+  }
+}
+
+/**
+ * Registrar un nuevo producto (Maneja la imagen de Multer)
+ */
+async function addProduct(req, res) {
+  try {
+    const { Nombre, Categoria, Talla, Color, Precio, Stock } = req.body;
+    const Imagen = req.file ? req.file.filename : null;
+
+    if (!Nombre || !Precio || !Stock) {
+      return res.status(400).json({ ok: false, message: &#039;Nombre, Precio y Stock son obligatorios&#039; });
+    }
+
+    const [result] = await pool.query(
+      &#039;INSERT INTO producto (Nombre, Categoria, Talla, Color, Precio, Stock, Imagen) VALUES (?, ?, ?, ?, ?, ?, ?)&#039;,
+      [Nombre, Categoria, Talla || null, Color || null, Precio, Stock, Imagen]
+    );
+
+    res.status(201).json({
+      ok: true,
+      message: &#039;Producto creado exitosamente&#039;,
+      product: { IdProducto: result.insertId, Nombre, Imagen }
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: err.message });
+  }
+}
+
+/**
+ * Actualizar producto y gestionar reemplazo de imagen física
+ */
+async function updateProduct(req, res) {
+  const { id } = req.params;
+  const { Nombre, Categoria, Talla, Color, Precio, Stock } = req.body;
+  const nuevaImagen = req.file ? req.file.filename : null;
+
+  try {
+    // 1. Si hay imagen nueva, buscamos la vieja para borrarla
+    if (nuevaImagen) {
+      const [rows] = await pool.query(&#039;SELECT Imagen FROM producto WHERE IdProducto = ?&#039;, [id]);
+      if (rows.length &gt; 0 &amp;&amp; rows[0].Imagen) {
+        const oldPath = path.join(__dirname, &#039;../uploads/&#039;, rows[0].Imagen);
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      }
+    }
+
+    // 2. Construir la consulta dinámicamente
+    let sql = &#039;UPDATE producto SET Nombre=?, Categoria=?, Talla=?, Color=?, Precio=?, Stock=?&#039;;
+    const params = [Nombre, Categoria, Talla, Color, Precio, Stock];
+
+    if (nuevaImagen) {
+      sql += &#039;, Imagen=?&#039;;
+      params.push(nuevaImagen);
+    }
+
+    sql += &#039; WHERE IdProducto=?&#039;;
+    params.push(id);
+
+    await pool.query(sql, params);
+    res.json({ ok: true, message: &#039;Producto actualizado&#039; });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: err.message });
+  }
+}
+
+/**
+ * Eliminar producto y su archivo de imagen asociado
+ */
+async function deleteProduct(req, res) {
+  const { id } = req.params;
+  try {
+    // 1. Obtener nombre de la imagen antes de borrar el registro
+    const [rows] = await pool.query(&#039;SELECT Imagen FROM producto WHERE IdProducto = ?&#039;, [id]);
+    
+    if (rows.length &gt; 0 &amp;&amp; rows[0].Imagen) {
+      const filePath = path.join(__dirname, &#039;../uploads/&#039;, rows[0].Imagen);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath); // Borra la foto de la carpeta uploads
+      }
+    }
+
+    // 2. Borrar de la base de datos
+    const [result] = await pool.query(&#039;DELETE FROM producto WHERE IdProducto = ?&#039;, [id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, message: &#039;Producto no encontrado&#039; });
+    }
+
+    res.json({ ok: true, message: &#039;Producto e imagen eliminados correctamente&#039; });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: &#039;Error al eliminar producto&#039; });
+  }
+}
+
+exports.getAllProducts = getAllProducts;
+exports.getProductsWithProviders = getProductsWithProviders;
+exports.addProduct = addProduct;
+exports.updateProduct = updateProduct;
+exports.deleteProduct = deleteProduct;
+</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ complexity.cyclomatic }} <br>
+    Length : {{ complexity.halstead.length }} <br>
+    Difficulty : {{ complexity.halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ complexity.halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

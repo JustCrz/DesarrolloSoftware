@@ -1,55 +1,98 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<<<<<<< HEAD
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Marjorie Store</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="style.css" />
   <script src="https://js.stripe.com/v3/"></script>
-=======
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Marjorie Store</title>
-<link rel="stylesheet" href="style.css" />
->>>>>>> origin/main
 </head>
 <body>
 
 <header>
-  <div class="brand">
-    <h1>👗 Marjorie Store</h1>
-    <p class="tagline">Moda femenina · Estilo moderno</p>
+  <div class="header-inner">
+    <div class="brand">
+      <h1>𝓜𝓪𝓻𝓳𝓸𝓻𝓲𝓮 𝓢𝓽𝓸𝓻𝓮</h1>
+      <p class="tagline">Moda femenina · Estilo moderno</p>
+    </div>
+    
+    <nav id="userArea">
+      <div class="nav-modules">
+        <button id="btnInicio" class="nav-link" onclick="showLanding()">Inicio</button>
+        <button class="nav-link" onclick="showCatalog()">Catálogo</button>
+        <button class="nav-link" onclick="showPromocionesPage()" style="color: var(--accent); font-weight: bold;">⚡ Ofertas</button>
+         <button id="btnHistorial" onclick="showUserHistory()" class="hidden nav-link">Mis Pedidos</button>
+
+        <div id="authButtons" class="auth-group">
+          <button onclick="showLogin()" class="btn-sm">Iniciar sesión</button>
+          <button class="btn-sm secondary" onclick="showRegister()">Registrarse</button>
+        </div>
+
+        <button id="btnCart" onclick="mostrarCarrito()" class="hidden cart-btn">
+          🛒 Carrito <span id="cartCount" class="badge">0</span>
+        </button>
+        <button id="btnLogout" onclick="logout()" class="hidden btn-sm secondary">Salir</button>
+      </div>
+    </nav>
+    
   </div>
-  <nav id="userArea">
-    <button id="btnInicio" onclick="showLanding()">Inicio</button>
-    <button id="btnPanel" onclick="showAdminPanel()" class="hidden">Panel</button>
-    <button onclick="showCatalog()">Catálogo</button>
-    <button id="btnCart" onclick="mostrarCarrito()" class="hidden">Carrito</button>
-    <button id="btnLogout" onclick="logout()" class="hidden">Cerrar sesión</button>
-  </nav>
 </header>
 
 <main>
-<<<<<<< HEAD
-=======
-  <!-- Landing -->
->>>>>>> origin/main
-  <section id="landing" class="card center">
-    <h2>Bienvenida a Marjorie Store</h2>
-    <p>Ropa femenina, elegante y actual.</p>
-    <div class="actions">
-      <button onclick="showLogin()">Iniciar sesión</button>
-      <button class="secondary" onclick="showRegister()">Registrarse</button>
-    </div>
-  </section>
+  <section id="landing">
+    <div class="main-layout">
+      
+      <section class="main-content">
+        
+        <section id="promociones" class="hidden" style="margin-bottom: 30px;">
+          <div class="promo-header">
+            <h3 style="color: #ff3e3e;">⚡ Ofertas Relámpago</h3>
+          </div>
+          <div id="promoGrid" class="grid"></div>
+        </section>
 
-<<<<<<< HEAD
+        <div class="hero-card">
+          <div class="hero-overlay">
+            <span class="badge-new">🌸 NUEVA COLECCIÓN</span>
+            <h2>PRIMAVERA DINÁMICA</h2>
+            <button class="btn-hero" onclick="showCatalog()">Ver detalles</button>
+          </div>
+        </div>
+
+        <section id="bestSellers">
+          <h3>𝓣𝓸𝓹 𝓟𝓻𝓸𝓭𝓾𝓬𝓽𝓸𝓼 𝓭𝓮𝓵 𝓜𝓮𝓼</h3>
+          <div id="bestSellersGrid" class="grid"></div>
+        </section>
+
+      </section>
+
+      <aside class="sidebar-right">
+        <div class="card">
+          <h4>Contacto Marjorie Millán</h4>
+          <p>📞 +52 662 348 4659</p>
+          <div class="social-links">
+            <p>📱 <b>IG:</b> @marjoriesstore_</p>
+            <p>📘 <b>FB:</b> Marjorie Millán</p>
+          </div>
+        </div>
+        <div class="card">
+          <h4>¿Por qué comprar aquí?</h4>
+          <p>𝙴𝚗𝚟𝚒𝚘𝚜 𝚂𝚎𝚐𝚞𝚛𝚘𝚜</p>
+          <p>𝙲𝚊𝚕𝚒𝚍𝚊𝚍 𝙶𝚊𝚛𝚊𝚗𝚝𝚒𝚣𝚊𝚍𝚊</p>
+        </div>
+        <div class="card">
+          <h4>Novedades Instantáneas</h4>
+          <div class="news-item"><p>🛍️ Nuevas llegadas en Accesorios</p></div>
+          <div class="news-item"><p>👥 3 Clientes comprando ahora</p>
+          </div>
+        </div>
+      </aside>
+
+    </div> </section> </main>
+
   <section id="login" class="card modal hidden">
-=======
-  <!-- Login -->
-  <section id="login" class="card modal hidden" aria-hidden="true">
->>>>>>> origin/main
     <h3>Iniciar sesión</h3>
     <input id="loginUser" type="email" placeholder="Email" />
     <input id="loginPass" placeholder="Contraseña" type="password" />
@@ -60,12 +103,7 @@
     <p id="loginMsg" class="error"></p>
   </section>
 
-<<<<<<< HEAD
   <section id="register" class="card modal hidden">
-=======
-  <!-- Register -->
-  <section id="register" class="card modal hidden" aria-hidden="true">
->>>>>>> origin/main
     <h3>Registrarse</h3>
     <input id="regUser" placeholder="Nombre" />
     <input id="regEmail" type="email" placeholder="Email" />
@@ -79,25 +117,31 @@
     <p id="regMsg" class="success"></p>
   </section>
 
-<<<<<<< HEAD
   <section id="catalog" class="hidden">
     <div class="card" style="background: var(--accent-soft); margin-bottom: 20px; border: 2px solid var(--accent);">
-        <h3 style="margin: 0 0 10px 0;">👑 Producto Estrella</h3>
+        <h3 style="margin: 0 0 10px 0;"> Producto Estrella</h3>
         <div id="infoEstrellaCliente">Cargando producto estrella...</div>
     </div>
     <div id="catalogGrid" class="grid"></div>
   </section>
 
   <section id="productDetail" class="card modal hidden"></section>
-
-  <section id="cart" class="card hidden">
+<section id="cart" class="card hidden">
   <h3>Tu carrito</h3>
   <div id="cartContents"></div>
-  <div id="cartFooter" class="cart-footer">
-      <button id="btnPagar" class="hidden" onclick="handlePayment()">Finalizar Compra</button>
+  <div class="cart-summary" style="text-align: right; padding: 20px; border-top: 2px solid #eee;">
+      <h4>Total: <span id="totalDisplay">$0.00</span></h4>
+      <button id="btnPagar" class="hidden btn-hero" onclick="finalizarCompra()" style="width: 100%; margin-top: 10px;">
+          Finalizar Compra
+      </button>
   </div>
 </section>
-
+    <section id="userHistory" class="card hidden">
+  <h3>Mis Pedidos Recientes</h3>
+  <div id="historyList" class="list-providers">
+    </div>
+  <button class="secondary" onclick="showCatalog()" style="margin-top: 15px;">Volver al Catálogo</button>
+</section>
 
 
   <section id="adminPanel" class="card hidden">
@@ -108,41 +152,11 @@
         <button onclick="showAdminSection('proveedores')">Control Proveedores</button>
         <button onclick="showAdminSection('catalogo')">Control Catálogo</button>
         <button onclick="showAdminSection('estadisticas')">Estadísticas</button>
+        <button onclick="showAdminSection('pedidos')">Gestionar Entregas </button>
         <button onclick="showAdminSection('pagos')">Gestionar Pagos</button>
       </aside>
 
       <div class="admin-content">
-=======
-  <!-- Catalogo (cliente) -->
-  <section id="catalog" class="grid hidden"></section>
-
-  <!-- Product detail modal -->
-  <section id="productDetail" class="card modal hidden" aria-hidden="true"></section>
-
-  <!-- Carrito (cliente) -->
-  <section id="cart" class="card hidden">
-    <h3>Tu carrito</h3>
-    <div id="cartContents"></div>
-    <div id="cartFooter" class="cart-footer"></div>
-  </section>
-
-  <!-- Admin panel -->
-  <section id="adminPanel" class="card hidden">
-    <h2>Panel administrador</h2>
-    <div class="admin-inner">
-      <!-- Left column: navigation -->
-      <aside class="admin-nav">
-        <button onclick="showAdminSection('inventario')">Gestionar Inventario</button>
-        <button onclick="showAdminSection('proveedores')">Registrar Proveedores</button>
-        <button onclick="showAdminSection('catalogo')">Control Catálogo</button>
-        <button onclick="showAdminSection('pagos')">Gestionar Pagos</button>
-      </aside>
-
-      <!-- Right column: sections -->
-      <div class="admin-content">
-
-        <!-- Inventario -->
->>>>>>> origin/main
         <div id="adminInventario" class="adminSection hidden">
           <h3>Gestionar Inventario</h3>
           <form id="formProducto">
@@ -152,25 +166,24 @@
             <input id="color" placeholder="Color" />
             <input id="precio" placeholder="Precio" type="number" required />
             <input id="stock" placeholder="Stock" type="number" required />
-<<<<<<< HEAD
             <input id="imagen" type="file" accept="image/*" />
+            <div class="card" style="padding: 15px; border: 1px solid #ddd;">
+            <label style="display: flex; align-items: center; gap: 10px;">
+             <input type="checkbox" id="enPromocion" style="width: auto;"> ¿Está en promoción?
+          </label>
+           <input id="precioOferta" type="number" placeholder="Precio de oferta" />
+             <label>Fin de promoción:</label>
+           <input id="fechaFinPromo" type="datetime-local" />
+          </div>
+
             <div class="actions">
               <button type="submit">Guardar Producto</button>
-=======
-            <input id="imagen" type="file" accept="image/png, image/jpeg" placeholder="Imagen"/>
-            <div class="actions">
-              <button type="submit">Agregar / Modificar</button>
->>>>>>> origin/main
               <button type="button" class="secondary" onclick="renderAdminList()">Cancelar</button>
             </div>
           </form>
           <div id="adminList" class="grid admin-grid"></div>
         </div>
 
-<<<<<<< HEAD
-=======
-        <!-- Proveedores -->
->>>>>>> origin/main
         <div id="adminProveedores" class="adminSection hidden">
           <h3>Control Proveedores</h3>
           <form id="formProveedor">
@@ -178,18 +191,11 @@
             <input id="provTelefono" type="tel" placeholder="Teléfono" required />
             <input id="provEmail" type="email" placeholder="Email" />
             <input id="provDireccion" placeholder="Dirección" required />
-<<<<<<< HEAD
             <button type="submit">Agregar proveedor</button>
-=======
-            <div class="actions">
-              <button type="submit">Agregar proveedor</button>
-            </div>
->>>>>>> origin/main
           </form>
           <div id="listaProveedores" class="list-providers"></div>
         </div>
 
-<<<<<<< HEAD
         <div id="adminCatalogo" class="adminSection hidden">
           <h3>Vista Previa del Catálogo</h3>
           <div id="catalogAdmin" class="grid"></div>
@@ -204,15 +210,15 @@
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
               <div class="card center">
-                  <h4>💰 Ingresos</h4>
+                  <h4> Ingresos</h4>
                   <h2 id="dashIngresosPeriodo">$0</h2>
               </div>
               <div class="card center">
-                  <h4>📦 Pedidos</h4>
+                  <h4> Pedidos</h4>
                   <h2 id="dashPedidosPeriodo">0</h2>
               </div>
           </div>
-          <h4>🏆 Producto Más Vendido</h4>
+          <h4> Producto Más Vendido</h4>
           <div id="productoEstrellaContenedor" class="card" style="display: flex; align-items: center; gap: 15px; background: #f0f7ff;">
             <p>Cargando datos...</p>
           </div>
@@ -220,35 +226,27 @@
           <div id="listaVentasHistorial" class="list-providers"></div>
         </div>
 
-        <div id="adminPagos" class="adminSection hidden">
+       <div id="adminPagos" class="adminSection hidden">
           <h3>Gestión de Pagos</h3>
           <div id="pagosLista"></div>
           <p id="totalPagos" style="font-weight: bold; font-size: 1.2rem;"></p>
         </div>
-=======
-        <!-- Catalogo admin -->
-        <div id="adminCatalogo" class="adminSection hidden">
-          <h3>Control Catálogo (visualización pública)</h3>
-          <div id="catalogAdmin" class="grid"></div>
+
+        <div id="adminOrders" class="adminSection hidden">
+            <h3>🚚 Gestión de Entregas</h3>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                <div id="adminOrdersList" class="list-providers" style="max-height: 500px; overflow-y: auto;">
+                    </div>
+                <div class="card" style="padding: 10px;">
+                    <div id="mapaAdmin" style="height: 450px; width: 100%; border-radius: 12px; border: 2px solid var(--accent);"></div>
+                    <p style="text-align: center; font-size: 0.8rem; color: #888; margin-top: 5px;">
+                        Haz clic en un pedido para ver la ubicación de entrega.
+                    </p>
+                </div>
+            </div>
         </div>
+      </div> </div> </section> </main>
 
-        <!-- Pagos -->
-        <div id="adminPagos" class="adminSection hidden">
-          <h3>Gestión de pagos</h3>
-          <div id="pagosLista"></div>
-          <p id="totalPagos">Total de pagos: $0</p>
-          <div class="actions">
-            <button onclick="renderPagos()">Actualizar</button>
-          </div>
-        </div>
-
->>>>>>> origin/main
-      </div>
-    </div>
-  </section>
-</main>
-
-<<<<<<< HEAD
 <div id="cartMessage" class="toast"></div>
 
 <div id="modalProducto" class="modal-overlay hidden">
@@ -261,11 +259,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-=======
-<!-- Toast para mensajes -->
-<div id="cartMessage" class="toast"></div>
-
-<script src="script.js"></script>
-</body>
-</html>
->>>>>>> origin/main
