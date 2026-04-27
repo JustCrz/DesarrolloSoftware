@@ -9,6 +9,19 @@ let ventas = [];
 let carrito = [];
 let loggedUser = null;
 
+/* ---------------- Helpers de variantes ---------------- */
+function getDefaultVariant(producto) {
+  return producto?.Variantes && producto.Variantes.length > 0 ? producto.Variantes[0] : null;
+}
+
+function findVariantById(idVariante) {
+  for (const p of productos) {
+    const v = p.Variantes?.find(vr => vr.IdVariante === idVariante);
+    if (v) return { producto: p, variante: v };
+  }
+  return null;
+}
+
 /* ---------------- Utilidades DOM ---------------- */
 const el = id => document.getElementById(id);
 const show = id => el(id)?.classList.remove('hidden');
@@ -176,11 +189,15 @@ function renderCarrito() {
         total += subtotal;
         
         const div = document.createElement('div');
+        const labelVar = [item.Talla, item.Color].filter(Boolean).join(' / ');
+        const imgSrc = item.Imagen ? `${API_BASE}/uploads/${item.Imagen.replace('uploads/', '').replace('/uploads/', '')}` : 'placeholder.jpg';
+
         // Usamos una estructura simple para que el CSS viejo la detecte bien
         div.innerHTML = `
             <div class="producto-item">
-                <img src="${item.imagen || 'placeholder.jpg'}" alt="${item.Nombre}" style="width: 80px;">
+                <img src="${imgSrc}" alt="${item.Nombre}" style="width: 80px;">
                 <h3>${item.Nombre}</h3>
+                <p>${labelVar || ''}</p>
                 <p>$${item.Precio} x ${item.Cantidad}</p>
                 <button onclick="eliminarDelCarrito(${index})">Eliminar</button>
             </div>
@@ -197,30 +214,43 @@ function renderCarrito() {
 function addToCart(id){
   if(!loggedUser){ alert('Debes iniciar sesión'); return; }
   const p=productos.find(x=>x.IdProducto===id);
+  const variante = getDefaultVariant(p);
   const qty=parseInt(el(`cantidad_${id}`)?.value || 1);
-  if(p.Stock<qty){ alert('Stock insuficiente'); return; }
-  const item=carrito.find(i=>i.IdProducto===id);
-  if(item) item.Cantidad+=qty; else carrito.push({...p,Cantidad:qty});
-  p.Stock-=qty; renderCatalog(); renderCarrito();
+  if(!variante){ alert('Sin variantes disponibles'); return; }
+  if(variante.Stock<qty){ alert('Stock insuficiente'); return; }
+  const item=carrito.find(i=>i.IdVariante===variante.IdVariante);
+  if(item) item.Cantidad+=qty; 
+  else carrito.push({
+    IdProducto: p.IdProducto,
+    IdVariante: variante.IdVariante,
+    Nombre: p.Nombre,
+    Imagen: p.Imagen,
+    Talla: variante.Talla,
+    Color: variante.Color,
+    Precio: variante.Precio,
+    Cantidad: qty
+  });
+  variante.Stock-=qty; renderCatalog(); renderCarrito();
   showToast(`${p.Nombre} agregado (${qty})`);
 }
 
 function updateCantidad(index,nuevaCantidad){
   nuevaCantidad=parseInt(nuevaCantidad); if(isNaN(nuevaCantidad)||nuevaCantidad<1) return;
   const item=carrito[index];
-  const producto=productos.find(p=>p.IdProducto===item.IdProducto);
+  const found = findVariantById(item.IdVariante);
   const diff=nuevaCantidad-item.Cantidad;
-  if(diff>0 && producto.Stock<diff){ alert('No hay suficiente stock'); renderCarrito(); return; }
-  item.Cantidad=nuevaCantidad; producto.Stock-=diff; renderCatalog(); renderCarrito();
+  if(diff>0 && found?.variante?.Stock < diff){ alert('No hay suficiente stock'); renderCarrito(); return; }
+  item.Cantidad=nuevaCantidad; 
+  if(found?.variante) found.variante.Stock -= diff;
+  renderCatalog(); renderCarrito();
 }
 
 function eliminarDelCarrito(index){
   const item=carrito[index];
-  const producto=productos.find(p=>p.IdProducto===item.IdProducto);
-  if(producto) producto.Stock+=item.Cantidad;
+  const found = findVariantById(item.IdVariante);
+  if(found?.variante) found.variante.Stock += item.Cantidad;
   carrito.splice(index,1); renderCatalog(); renderCarrito();
 }
-
 /* ---------------- Pagos con Stripe ---------------- */
 async function handlePayment() {
   if (carrito.length === 0) {
@@ -266,9 +296,32 @@ function abrirModalProducto(id) {
   const p = productos.find(x => x.IdProducto === id);
   if (!p) return;
 
+  const variantes = p.Variantes || [];
   const modalBody = el('modalBody');
   const nombreImagen = p.Imagen ? p.Imagen.replace('uploads/', '').replace('/uploads/', '') : '';
   const urlFinal = `${API_BASE}/uploads/${nombreImagen}`;
+
+  if (variantes.length === 0) {
+    modalBody.innerHTML = `
+      <div class="modal-product-layout">
+        <button class="close-modal" onclick="cerrarModal()">×</button>
+        <img src="${urlFinal}" alt="${p.Nombre}" style="width:100%; border-radius:12px; margin-bottom:15px;">
+        <div class="product-info">
+          <h2 style="margin:0;">${p.Nombre}</h2>
+          <p style="font-size:0.9rem; color:var(--muted);">Sin variantes disponibles</p>
+        </div>
+      </div>
+    `;
+    show('modalProducto');
+    return;
+  }
+
+  const options = variantes.map(v => {
+    const talla = v.Talla || 'Unica';
+    const color = v.Color || '';
+    const label = color ? `${talla} / ${color}` : `${talla}`;
+    return `<option value="${v.IdVariante}" data-precio="${v.Precio}" data-stock="${v.Stock}" data-talla="${v.Talla || ''}" data-color="${v.Color || ''}">${label} - $${v.Precio}</option>`;
+  }).join('');
 
   modalBody.innerHTML = `
     <div class="modal-product-layout">
@@ -278,19 +331,18 @@ function abrirModalProducto(id) {
       <div class="product-info">
         <h2 style="margin:0;">${p.Nombre}</h2>
         <div style="margin: 5px 0;">${renderEstrellas(p.Calificacion || 0)}</div>
-        <p style="font-size:1.2rem; color:var(--accent); font-weight:bold;">$${p.Precio}</p>
-        <p style="font-size:0.9rem; color:var(--muted);">Stock disponible: ${p.Stock}</p>
+        <p style="font-size:1.2rem; color:var(--accent); font-weight:bold;">Precio: <span id="modalPrecio">$${variantes[0].Precio}</span></p>
+        <p style="font-size:0.9rem; color:var(--muted);">Stock disponible: <span id="modalStock">${variantes[0].Stock}</span></p>
       </div>
       
       <div class="selection-group">
-        <label>Talla:</label>
-        <select id="modalTalla" class="modern-select">
-          <option value="M">Talla M</option>
-          <option value="L">Talla L</option>
+        <label>Variante:</label>
+        <select id="modalVariante" class="modern-select" onchange="updateModalVariantInfo()">
+          ${options}
         </select>
         
         <label>Cantidad:</label>
-        <input type="number" id="modalCantidad" value="1" min="1" max="${p.Stock}" class="modern-input">
+        <input type="number" id="modalCantidad" value="1" min="1" max="${variantes[0].Stock}" class="modern-input">
       </div>
       
       <button class="btn-add-modal" onclick="addToCartFromModal(${p.IdProducto})">
@@ -302,46 +354,74 @@ function abrirModalProducto(id) {
   show('modalProducto');
 }
 
-// La lógica de addToCartFromModal se mantiene igual, 
-// solo asegúrate de que el nombre del ID en el HTML coincida.
+function updateModalVariantInfo() {
+  const select = el('modalVariante');
+  if (!select) return;
+  const opt = select.options[select.selectedIndex];
+  const precio = parseFloat(opt.dataset.precio || '0');
+  const stock = parseInt(opt.dataset.stock || '0');
+
+  const precioEl = el('modalPrecio');
+  const stockEl = el('modalStock');
+  if (precioEl) precioEl.textContent = `$$`;
+  if (stockEl) stockEl.textContent = `${stock}`;
+
+  const qty = el('modalCantidad');
+  if (qty) {
+    qty.max = stock;
+    if (parseInt(qty.value) > stock) qty.value = stock || 1;
+  }
+}
+
 function addToCartFromModal(id) {
   const p = productos.find(x => x.IdProducto === id);
   if (!p) return;
 
-  // ¡IMPORTANTE! Capturamos los valores del DOM antes de procesar
+  const select = el('modalVariante');
+  if (!select) return;
+  const opt = select.options[select.selectedIndex];
+  const idVariante = parseInt(select.value);
+  const precio = parseFloat(opt.dataset.precio || '0');
+  const stock = parseInt(opt.dataset.stock || '0');
+  const talla = opt.dataset.talla || null;
+  const color = opt.dataset.color || null;
+
   const cantidad = parseInt(el('modalCantidad').value);
-  const talla = el('modalTalla').value;
 
   if (isNaN(cantidad) || cantidad < 1) {
     alert("Por favor ingresa una cantidad válida");
     return;
   }
 
-  if (cantidad > p.Stock) {
+  if (cantidad > stock) {
     alert('Stock insuficiente');
     return;
   }
 
-  // Creamos el objeto con la personalización
   const item = {
-    ...p,
-    Cantidad: cantidad,
-    TallaSeleccionada: talla // Guardamos la talla elegida por el cliente
+    IdProducto: p.IdProducto,
+    IdVariante: idVariante,
+    Nombre: p.Nombre,
+    Imagen: p.Imagen,
+    Talla: talla,
+    Color: color,
+    Precio: precio,
+    Cantidad: cantidad
   };
 
-  // Lógica para añadir al carrito
-  const existente = carrito.find(i => i.IdProducto === id && i.TallaSeleccionada === talla);
+  const existente = carrito.find(i => i.IdVariante === idVariante);
   if (existente) {
     existente.Cantidad += cantidad;
   } else {
     carrito.push(item);
   }
 
-  p.Stock -= cantidad; // Reducimos el stock
+  const found = findVariantById(idVariante);
+  if (found?.variante) found.variante.Stock -= cantidad;
   
-  cerrarModal(); // Cerramos la ventana
-  showToast(`${p.Nombre} (${talla}) agregado al carrito`);
-  renderCarrito(); // Actualizamos la vista del carrito
+  cerrarModal();
+  showToast(`${p.Nombre} agregado al carrito`);
+  renderCarrito();
 }
 
 function cerrarModal() {
@@ -350,6 +430,7 @@ function cerrarModal() {
 /* ---------------- Admin: Inventario ---------------- */
 const formProducto = el('formProducto');
 let editingId = null;
+let editingVarianteId = null;
 
 formProducto.addEventListener('submit', async e => {
   e.preventDefault();
@@ -361,7 +442,7 @@ formProducto.addEventListener('submit', async e => {
   const Precio = parseFloat(el('precio').value);
   const Color = el('color').value.trim();
   
-  // CORRECCIÓN: Captura el archivo real, no el valor del input
+  // Captura el archivo real, no el valor del input
   const ImagenFile = el('imagen').files[0]; 
 
   const formData = new FormData();
@@ -371,34 +452,40 @@ formProducto.addEventListener('submit', async e => {
   formData.append('Stock', Stock);
   formData.append('Precio', Precio);
   formData.append('Color', Color);
+
+  if (editingVarianteId) {
+    formData.append('IdVariante', editingVarianteId);
+  }
   
   // Solo agrega la imagen si el usuario seleccionó una nueva
   if (ImagenFile) {
       formData.append('Imagen', ImagenFile);
   }
 
+  const wasEditing = Boolean(editingId);
+
   try {
-    if (editingId) {
+    if (wasEditing) {
       // Editar producto existente
       await fetch(`${API_BASE}/api/products/${editingId}`, {
         method: 'PUT',
         body: formData
-        //credentials: 'include'
       });
     } else {
       // Crear nuevo producto
       await fetch(`${API_BASE}/api/products`, {
         method: 'POST',
         body: formData
-        //credentials: 'include'
       });
     }
 
-  editingId = null;
-    alert(editingId ? 'Producto actualizado' : 'Producto agregado con éxito');
+    editingId = null;
+    editingVarianteId = null;
+
+    alert(wasEditing ? 'Producto actualizado' : 'Producto agregado con éxito');
     formProducto.reset();
     await cargarProductos(); // recarga la lista de productos
-    showAdminPanel(); // <-- FORZAMOS que se quede en el panel
+    showAdminPanel(); // FORZAMOS que se quede en el panel
     showAdminSection('inventario');
   } catch (err) {
     console.error(err);
@@ -409,10 +496,14 @@ formProducto.addEventListener('submit', async e => {
 function renderAdminList(){
   const container=el('adminList'); container.innerHTML='';
   productos.forEach(p=>{
+    const v = getDefaultVariant(p);
+    const stock = v?.Stock ?? 0;
+    const precio = v?.Precio ?? 0;
+    const etiqueta = [v?.Talla, v?.Color].filter(Boolean).join(' / ');
     const card=document.createElement('div'); card.className='producto';
     card.innerHTML=`
       <h4>${p.Nombre}</h4>
-      <p>Stock: ${p.Stock} | $${p.Precio}</p>
+      <p>${etiqueta || 'Sin variante'} | Stock: ${stock} | $${precio}</p>
       <button onclick="editProducto(${p.IdProducto})">Editar</button>
       <button onclick="deleteProducto(${p.IdProducto})">Eliminar</button>`;
     container.appendChild(card);
@@ -420,18 +511,19 @@ function renderAdminList(){
 }
 
 function editProducto(id){
-const p = productos.find(x => x.IdProducto === id);
-  el('nombre').value = p.Nombre;
-  el('talla').value = p.Talla;
-  el('categoria').value = p.Categoria;
-  el('stock').value = p.Stock;
-  el('precio').value = p.Precio;
-  el('color').value = p.Color;
- const imgPreview = el('imgPreview'); 
-    if(imgPreview) imgPreview.src = `${API_BASE}/uploads/${p.Imagen}`;
-    
-    editingId = id;
-
+  const p = productos.find(x => x.IdProducto === id);
+  const v = getDefaultVariant(p);
+  el('nombre').value = p?.Nombre || '';
+  el('talla').value = v?.Talla || '';
+  el('categoria').value = p?.Categoria || '';
+  el('stock').value = v?.Stock ?? '';
+  el('precio').value = v?.Precio ?? '';
+  el('color').value = v?.Color || '';
+  const imgPreview = el('imgPreview');
+  if(imgPreview && p?.Imagen) imgPreview.src = `${API_BASE}/uploads/${p.Imagen}`;
+  
+  editingId = id;
+  editingVarianteId = v?.IdVariante || null;
 }
 
 async function deleteProducto(id) {
@@ -548,6 +640,11 @@ function renderCatalogAdmin(){
     const card = document.createElement('div'); 
     card.className = 'producto';
 
+    const v = getDefaultVariant(p);
+    const stock = v?.Stock ?? 0;
+    const precio = v?.Precio ?? 0;
+    const etiqueta = [v?.Talla, v?.Color].filter(Boolean).join(' / ');
+
     // APLICAMOS LA MISMA LIMPIEZA QUE EN EL CATÁLOGO DE CLIENTE
     const nombreImagen = p.Imagen ? p.Imagen.replace('uploads/', '').replace('/uploads/', '') : '';
     const urlFinal = `${API_BASE}/uploads/${nombreImagen}`;
@@ -557,7 +654,7 @@ function renderCatalogAdmin(){
           style="width:100%; height:150px; object-fit:cover; border-radius:8px;"
           onerror="this.src='https://via.placeholder.com/400x300?text=Sin+Imagen'">
       <h4>${p.Nombre}</h4>
-      <p>Stock: ${p.Stock} | $${p.Precio}</p>
+      <p>${etiqueta || 'Sin variante'} | Stock: ${stock} | $${precio}</p>
       <div class="meta">
         <button onclick="editProducto(${p.IdProducto})">Editar</button>
         <button class="secondary" onclick="deleteProducto(${p.IdProducto})">Eliminar</button>
@@ -753,3 +850,17 @@ function renderEstrellas(calificacion) {
   return `<span style="color: #FFD700; font-size: 1.2rem;">${estrellas}</span>`;
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
