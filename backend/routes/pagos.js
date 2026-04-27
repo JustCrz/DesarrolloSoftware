@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const paymentsController = require('../controllers/payments.controller');
+const { getPayments, getPaymentsByOrder, registerPaymentController } = require('../controllers/payments.controller');
 
-router.get('/', paymentsController.getPayments);
-router.get('/:idPedido', paymentsController.getPaymentsByOrder);
-router.post('/', paymentsController.registerPayment);
+router.get('/', getPayments);
+router.get('/:idPedido', getPaymentsByOrder);
+router.post('/', registerPaymentController);
 
 module.exports = router;

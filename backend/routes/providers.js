@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const providersController = require('../controllers/providers.controller');
+const { getProviders, addProvider, updateProviderController, deleteProviderController } = require('../controllers/providers.controller');
+
 // Obtener todos
-router.get('/', providersController.getProviders);
+router.get('/', getProviders);
 
 // Registrar nuevo
-router.post('/', providersController.addProvider);
+router.post('/', addProvider);
 
 // Actualizar datos
-router.put('/:id', providersController.updateProvider);
+router.put('/:id', updateProviderController);
 
 // Eliminar
-router.delete('/:id', providersController.deleteProvider);
+router.delete('/:id', deleteProviderController);
 
 module.exports = router;

@@ -2,98 +2,73 @@
  * @module PaymentsController
  */
 
-const pool = require('../bd');
+const { getAllPayments, getPaymentByOrder, registerPayment } = require('../services/payments.service');
 
 /**
- * Obtener todos los pagos
+ * Obtener todos los pagos (basado en pedidos pagados)
  * @async
  * @function getPayments
  * @param {Object} req Request de Express
  * @param {Object} res Response de Express
  * @returns {Promise<Object>} Respuesta HTTP con pagos
  */
-async function getPayments(req, res) {
+const getPayments = async (req, res) => {
   try {
-    const [pagos] = await pool.query(
-      `
-      SELECT pa.*, p.IdCliente, p.Total, p.Estado AS EstadoPedido
-      FROM pago pa
-      JOIN pedido p ON pa.IdPedido = p.IdPedido
-      ORDER BY pa.Fecha DESC
-    `
-    );
+    const pagos = await getAllPayments();
     return res.json({ ok: true, pagos });
   } catch (err) {
     console.error('Error al obtener pagos:', err);
     return res.status(500).json({ ok: false, message: 'Error al obtener pagos' });
   }
-}
+};
 
 /**
- * Obtener pagos de un pedido
+ * Obtener pago de un pedido
  * @async
  * @function getPaymentsByOrder
  * @param {Object} req Request de Express
  * @param {Object} res Response de Express
- * @returns {Promise<Object>} Respuesta HTTP con pagos del pedido
+ * @returns {Promise<Object>} Respuesta HTTP con pago del pedido
  */
-async function getPaymentsByOrder(req, res) {
+const getPaymentsByOrder = async (req, res) => {
   try {
     const idPedido = parseInt(req.params.idPedido);
-    const [pagos] = await pool.query('SELECT * FROM pago WHERE IdPedido = ?', [idPedido]);
+    const pagos = await getPaymentByOrder(idPedido);
     return res.json({ ok: true, pagos });
   } catch (err) {
     console.error('Error al obtener pagos de pedido:', err);
     return res.status(500).json({ ok: false, message: 'Error al obtener pagos del pedido' });
   }
-}
+};
 
 /**
- * Registrar un pago
+ * Registrar un pago (actualiza estado del pedido)
  * @async
- * @function registerPayment
+ * @function registerPaymentController
  * @param {Object} req Request de Express
  * @param {Object} res Response de Express
  * @returns {Promise<Object>} Respuesta HTTP de registro
  */
-async function registerPayment(req, res) {
+const registerPaymentController = async (req, res) => {
   try {
-    const { IdPedido, MetodoPago, Monto, Fecha } = req.body;
-
-    if (!IdPedido || !MetodoPago || !Monto) {
-      return res.status(400).json({ ok: false, message: 'Faltan campos obligatorios' });
-    }
-
-    const paymentDate = Fecha || new Date();
-
-    const [result] = await pool.query(
-      'INSERT INTO pago (IdPedido, MetodoPago, Monto, Fecha, Estado) VALUES (?, ?, ?, ?, ?)',
-      [IdPedido, MetodoPago, Monto, paymentDate, 'Pagado']
-    );
-
-    await pool.query(
-      'UPDATE pedido SET Estado = ? WHERE IdPedido = ?',
-      ['Pagado', IdPedido]
-    );
+    const { IdPedido } = req.body;
+    const result = await registerPayment(IdPedido);
 
     return res.status(201).json({
       ok: true,
-      message: 'Pago registrado y pedido actualizado a pagado',
-      pago: {
-        IdPago: result.insertId,
-        IdPedido,
-        MetodoPago,
-        Monto,
-        Fecha: paymentDate,
-        Estado: 'Pagado'
-      }
+      message: result.message
     });
   } catch (err) {
     console.error('Error al registrar pago:', err);
+    if (err.message.includes('Falta')) {
+      return res.status(400).json({ ok: false, message: err.message });
+    }
     return res.status(500).json({ ok: false, message: 'Error al registrar pago' });
   }
-}
+};
 
-exports.getPayments = getPayments;
-exports.getPaymentsByOrder = getPaymentsByOrder;
-exports.registerPayment = registerPayment;
+module.exports = {
+  getPayments,
+  getPaymentsByOrder,
+  registerPaymentController
+};

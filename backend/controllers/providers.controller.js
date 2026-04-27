@@ -1,7 +1,12 @@
 /**
  * @module ProvidersController
  */
-const db = require('../bd');
+const { 
+  getAllProviders, 
+  createProvider, 
+  deleteProvider, 
+  updateProvider 
+} = require('../services/providers.service');
 
 /**
  * Obtener todos los proveedores
@@ -11,87 +16,72 @@ const db = require('../bd');
  * @param {Object} res Response de Express
  * @returns {Promise<Object>} Respuesta HTTP con proveedores
  */
-async function getProviders(req, res) {
+const getProviders = async (req, res) => {
   try {
-    const sql = 'SELECT * FROM proveedores';
-    const [providers] = await db.query(sql);
+    const providers = await getAllProviders();
     return res.json({ ok: true, providers, provider: providers });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ ok: false, message: 'Error al obtener proveedores' });
   }
-}
+};
+
 /**
  * Registrar un nuevo proveedor
  */
-async function addProvider(req, res) {
-    const { Nombre, Telefono, Correo, Direccion } = req.body;
-    
-    try {
-        // 1. Validar si el correo ya existe para evitar duplicados
-        const [existing] = await pool.query(
-            'SELECT * FROM proveedores WHERE Correo = ?',
-            [Correo]
-        );
-
-        if (existing.length > 0) {
-            return res.status(400).json({ ok: false, message: 'El correo ya está registrado' });
-        }
-
-        // 2. Insertar nuevo proveedor
-        const [result] = await pool.query(
-            'INSERT INTO proveedores (Nombre, Telefono, Correo, Direccion) VALUES (?, ?, ?, ?)',
-            [Nombre, Telefono || null, Correo || null, Direccion || null]
-        );
-
-        res.status(201).json({ 
-            ok: true, 
-            message: 'Proveedor registrado correctamente',
-            id: result.insertId 
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ ok: false, message: 'Error al registrar proveedor' });
+const addProvider = async (req, res) => {
+  const { Nombre, Telefono, Correo, Direccion } = req.body;
+  
+  try {
+    const id = await createProvider({ Nombre, Telefono, Correo, Direccion });
+    res.status(201).json({ 
+      ok: true, 
+      message: 'Proveedor registrado correctamente',
+      id
+    });
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes('ya está registrado')) {
+      return res.status(400).json({ ok: false, message: err.message });
     }
-}
+    res.status(500).json({ ok: false, message: 'Error al registrar proveedor' });
+  }
+};
 
 /**
  * Eliminar un proveedor por ID
  */
-async function deleteProvider(req, res) {
-    const { id } = req.params;
-    try {
-        const [result] = await pool.query('DELETE FROM proveedores WHERE IdProveedor = ?', [id]);
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ ok: false, message: 'Proveedor no encontrado' });
-        }
-
-        res.json({ ok: true, message: 'Proveedor eliminado exitosamente' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ ok: false, message: 'Error al eliminar proveedor' });
+const deleteProviderController = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await deleteProvider(id);
+    res.json({ ok: true, message: 'Proveedor eliminado exitosamente' });
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes('no encontrado')) {
+      return res.status(404).json({ ok: false, message: err.message });
     }
-}
+    res.status(500).json({ ok: false, message: 'Error al eliminar proveedor' });
+  }
+};
 
 /**
- * Actualizar datos de un proveedor (Opcional, pero recomendado)
+ * Actualizar datos de un proveedor
  */
-async function updateProvider(req, res) {
-    const { id } = req.params;
-    const { Nombre, Telefono, Correo, Direccion } = req.body;
-    try {
-        await pool.query(
-            'UPDATE proveedores SET Nombre=?, Telefono=?, Correo=?, Direccion=? WHERE IdProveedor=?',
-            [Nombre, Telefono, Correo, Direccion, id]
-        );
-        res.json({ ok: true, message: 'Proveedor actualizado' });
-    } catch (err) {
-        res.status(500).json({ ok: false, message: 'Error al actualizar' });
-    }
-}
+const updateProviderController = async (req, res) => {
+  const { id } = req.params;
+  const { Nombre, Telefono, Correo, Direccion } = req.body;
+  try {
+    await updateProvider(id, { Nombre, Telefono, Correo, Direccion });
+    res.json({ ok: true, message: 'Proveedor actualizado' });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: 'Error al actualizar' });
+  }
+};
 
-exports.getProviders = getProviders;
-exports.addProvider = addProvider;
-exports.deleteProvider = deleteProvider;
-exports.updateProvider = updateProvider;
+module.exports = {
+  getProviders,
+  addProvider,
+  deleteProviderController,
+  updateProviderController
+};
