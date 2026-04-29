@@ -18,7 +18,7 @@ const getPayments = async (req, res) => {
     return res.json({ ok: true, pagos });
   } catch (err) {
     console.error('Error al obtener pagos:', err);
-    return res.status(500).json({ ok: false, message: 'Error al obtener pagos' });
+    return res.status(404).json({ ok: false, message: 'Error al obtener pagos' });
   }
 };
 
@@ -37,7 +37,7 @@ const getPaymentsByOrder = async (req, res) => {
     return res.json({ ok: true, pagos });
   } catch (err) {
     console.error('Error al obtener pagos de pedido:', err);
-    return res.status(500).json({ ok: false, message: 'Error al obtener pagos del pedido' });
+    return res.status(400).json({ ok: false, message: 'Error al obtener pagos del pedido' });
   }
 };
 
@@ -63,7 +63,7 @@ const registerPaymentController = async (req, res) => {
     if (err.message.includes('Falta')) {
       return res.status(400).json({ ok: false, message: err.message });
     }
-    return res.status(500).json({ ok: false, message: 'Error al registrar pago' });
+    return res.status(404).json({ ok: false, message: 'Error al registrar pago' });
   }
 };
 

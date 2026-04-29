@@ -48,10 +48,14 @@ async function registerPayment(idPedido) {
     throw new Error('Falta IdPedido');
   }
 
-  await pool.query(
-    'UPDATE pedido SET Estado = ? WHERE IdPedido = ?',
-    ['PAGADO', idPedido]
+  const [result] = await pool.query(
+  'UPDATE pedido SET Estado = ? WHERE IdPedido = ?',
+  ['PAGADO', idPedido]
   );
+
+  if (result.affectedRows === 0) {
+    throw new Error('Pedido no encontrado');
+  }
 
   return { message: 'Pedido actualizado a pagado' };
 }

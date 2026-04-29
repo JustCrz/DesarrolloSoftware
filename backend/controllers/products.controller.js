@@ -48,7 +48,7 @@ const updateProductController = async (req, res) => {
     await updateProduct(req.params.id, req.body, req.file);
     res.json({ ok: true, message: 'Producto actualizado correctamente' });
   } catch (error) {
-    res.status(500).json({ ok: false, message: 'Error al actualizar producto' });
+    res.status(404).json({ ok: false, message: 'Error al actualizar producto' });
   }
 };
 

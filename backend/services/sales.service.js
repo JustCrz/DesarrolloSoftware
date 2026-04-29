@@ -32,13 +32,13 @@ async function getAllSales() {
 async function getSaleDetail(saleId) {
   const sql = `
     SELECT 
-      pp.IdPedido, pp.IdVariante, pp.Cantidad, pp.PrecioUnitario,
-      v.Talla, v.Color, p.Nombre
+      pp.IdPedido, pp.IdProducto, pp.Cantidad,
+      p.Nombre, p.Precio
     FROM pedidoproducto pp
-    JOIN producto_variante v ON pp.IdVariante = v.IdVariante
-    JOIN producto p ON v.IdProducto = p.IdProducto
+    JOIN producto p ON pp.IdProducto = p.IdProducto
     WHERE pp.IdPedido = ?
   `;
+
   const [rows] = await pool.query(sql, [saleId]);
   return rows;
 }
@@ -53,67 +53,67 @@ async function getSaleDetail(saleId) {
  * @returns {Promise<Object>} ID del pedido y total
  * @throws {Error} Si hay problemas en la transacción
  */
-async function processSale(saleData) {
-  const { clientId, productos } = saleData;
-
-  if (!clientId) {
-    throw new Error('Invalid client ID');
+async function processSale(IdCliente, productos) {
+  if (!IdCliente) {
+    throw new Error('Cliente requerido');
   }
-
   if (!productos || productos.length === 0) {
-    throw new Error('Sale must have at least one item');
+    throw new Error('La venta debe tener al menos un producto');
   }
 
   let connection;
+
   try {
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
     let totalVenta = 0;
 
-    // 1. Validar disponibilidad
+    // 🔹 Validar stock y calcular total
     for (let item of productos) {
-      const idVariante = item.IdVariante;
-
-      const [varRows] = await connection.query(
-        `SELECT v.Precio, v.Stock, p.Nombre 
-         FROM producto_variante v 
-         JOIN producto p ON v.IdProducto = p.IdProducto
-         WHERE v.IdVariante = ? FOR UPDATE`,
-        [idVariante]
+      const [rows] = await connection.query(
+        `SELECT Nombre, Precio, Stock 
+         FROM producto 
+         WHERE IdProducto = ? FOR UPDATE`,
+        [item.IdProducto]
       );
 
-      if (varRows.length === 0) {
-        throw new Error(`Variante ID ${idVariante} no existe.`);
+      if (rows.length === 0) {
+        throw new Error(`Producto ID ${item.IdProducto} no existe`);
       }
 
-      if (varRows[0].Stock < item.Cantidad) {
-        throw new Error(`Stock insuficiente para: ${varRows[0].Nombre}`);
+      if (rows[0].Stock < item.Cantidad) {
+        throw new Error(`Stock insuficiente para ${rows[0].Nombre}`);
       }
 
-      const precioUnitario = varRows[0].Precio;
-      item.PrecioUnitario = precioUnitario;
-      totalVenta += precioUnitario * item.Cantidad;
+      item.PrecioUnitario = rows[0].Precio;
+      totalVenta += rows[0].Precio * item.Cantidad;
     }
 
-    // 2. Registrar pedido
+    // 🔹 Crear pedido
     const [pedidoRes] = await connection.query(
-      'INSERT INTO pedido (IdCliente, Fecha, Total, CostoEnvio, Estado) VALUES (?, NOW(), ?, ?, ?)',
-      [clientId, totalVenta, 0, 'PAGADO']
+      `INSERT INTO pedido 
+       (IdCliente, Fecha, Total, Estado) 
+       VALUES (?, NOW(), ?, ?)`,
+      [IdCliente, totalVenta, 'PAGADO']
     );
 
     const idPedido = pedidoRes.insertId;
 
-    // 3. Registrar productos y descontar stock
+    // 🔹 Insertar productos y actualizar stock
     for (let item of productos) {
       await connection.query(
-        'INSERT INTO pedidoproducto (IdPedido, IdVariante, Cantidad, PrecioUnitario) VALUES (?, ?, ?, ?)',
-        [idPedido, item.IdVariante, item.Cantidad, item.PrecioUnitario]
+        `INSERT INTO pedidoproducto 
+         (IdPedido, IdProducto, Cantidad) 
+         VALUES (?, ?, ?)`,
+        [idPedido, item.IdProducto, item.Cantidad]
       );
 
       await connection.query(
-        'UPDATE producto_variante SET Stock = Stock - ? WHERE IdVariante = ?',
-        [item.Cantidad, item.IdVariante]
+        `UPDATE producto 
+         SET Stock = Stock - ? 
+         WHERE IdProducto = ?`,
+        [item.Cantidad, item.IdProducto]
       );
     }
 

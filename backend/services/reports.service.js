@@ -14,26 +14,29 @@ const pool = require('../bd');
 async function getTopProduct() {
   const query = `
     SELECT 
-      p.Nombre as prenda, 
+      p.Nombre AS prenda,
       p.Imagen,
-      SUM(pp.Cantidad) as unidades_vendidas, 
-      SUM(pp.Cantidad * pp.PrecioUnitario) as total_generado
+      SUM(pp.Cantidad) AS unidades_vendidas,
+      SUM(pp.Cantidad * p.Precio) AS total_generado
     FROM pedidoproducto pp
-    JOIN producto_variante v ON pp.IdVariante = v.IdVariante
-    JOIN producto p ON v.IdProducto = p.IdProducto
+    JOIN producto p ON pp.IdProducto = p.IdProducto
     GROUP BY p.IdProducto
     ORDER BY unidades_vendidas DESC
     LIMIT 1
   `;
   const [rows] = await pool.query(query);
-  
-  const producto = rows[0] || { 
-    prenda: 'Sin ventas registradas', 
-    Imagen: null, 
-    unidades_vendidas: 0, 
-    total_generado: 0 
-  };
-  
+  const producto = rows[0]
+  ? {
+      ...rows[0],
+      unidades_vendidas: Number(rows[0].unidades_vendidas),
+      total_generado: Number(rows[0].total_generado)
+    }
+  : { 
+      prenda: 'Sin ventas registradas',
+      Imagen: null,
+      unidades_vendidas: 0,
+      total_generado: 0
+    };
   return producto;
 }
 

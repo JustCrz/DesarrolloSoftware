@@ -74,9 +74,12 @@ async function createProduct(data, file) {
   } = data;
 
   const Imagen = file ? file.filename : null;
+  
+  const PrecioNum = Number(Precio);
+  const StockNum = Number(Stock);
 
-  if (!Nombre || !Precio || !Stock) {
-    throw new Error('Nombre, Precio y Stock son obligatorios');
+  if (!Nombre || !PrecioNum || !StockNum) {
+  throw new Error('Nombre, Precio y Stock son obligatorios');
   }
 
   const [result] = await pool.query(`

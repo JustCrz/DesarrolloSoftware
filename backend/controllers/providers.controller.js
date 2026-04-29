@@ -22,7 +22,7 @@ const getProviders = async (req, res) => {
     return res.json({ ok: true, providers, provider: providers });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ ok: false, message: 'Error al obtener proveedores' });
+    return res.status(404).json({ ok: false, message: 'Error al obtener proveedores' });
   }
 };
 
@@ -75,7 +75,7 @@ const updateProviderController = async (req, res) => {
     await updateProvider(id, { Nombre, Telefono, Correo, Direccion });
     res.json({ ok: true, message: 'Proveedor actualizado' });
   } catch (err) {
-    res.status(500).json({ ok: false, message: 'Error al actualizar' });
+    res.status(404).json({ ok: false, message: 'Error al actualizar' });
   }
 };
 

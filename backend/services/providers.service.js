@@ -12,7 +12,7 @@ const db = require('../bd');
  * @returns {Promise<Array>} Lista de proveedores
  */
 async function getAllProviders() {
-  const sql = 'SELECT * FROM proveedor';
+  const sql = 'SELECT * FROM proveedores';
   const [providers] = await db.query(sql);
   return providers;
 }
@@ -33,7 +33,7 @@ async function createProvider(providerData) {
   const { Nombre, Telefono, Correo, Direccion } = providerData;
   
   const [existing] = await db.query(
-    'SELECT * FROM proveedor WHERE Correo = ?',
+    'SELECT * FROM proveedores WHERE Correo = ?',
     [Correo]
   );
 
@@ -42,7 +42,7 @@ async function createProvider(providerData) {
   }
 
   const [result] = await db.query(
-    'INSERT INTO proveedor (Nombre, Telefono, Correo, Direccion) VALUES (?, ?, ?, ?)',
+    'INSERT INTO proveedores (Nombre, Telefono, Correo, Direccion) VALUES (?, ?, ?, ?)',
     [Nombre, Telefono || null, Correo || null, Direccion || null]
   );
 
@@ -58,7 +58,7 @@ async function createProvider(providerData) {
  * @throws {Error} Si el proveedor no existe
  */
 async function deleteProvider(id) {
-  const [result] = await db.query('DELETE FROM proveedor WHERE IdProveedor = ?', [id]);
+  const [result] = await db.query('DELETE FROM proveedores WHERE IdProveedor = ?', [id]);
   
   if (result.affectedRows === 0) {
     throw new Error('Proveedor no encontrado');
@@ -78,10 +78,14 @@ async function deleteProvider(id) {
 async function updateProvider(id, providerData) {
   const { Nombre, Telefono, Correo, Direccion } = providerData;
   
-  await db.query(
-    'UPDATE proveedor SET Nombre=?, Telefono=?, Correo=?, Direccion=? WHERE IdProveedor=?',
+  const [result] = await db.query(
+    'UPDATE proveedores SET Nombre=?, Telefono=?, Correo=?, Direccion=? WHERE IdProveedor=?',
     [Nombre, Telefono, Correo, Direccion, id]
   );
+
+  if (result.affectedRows === 0) {
+  throw new Error('Proveedor no encontrado');
+  }
 
   return { message: 'Proveedor actualizado' };
 }
