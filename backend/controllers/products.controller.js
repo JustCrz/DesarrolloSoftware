@@ -1,12 +1,13 @@
 /**
  * @module ProductsController
+ * Manejo de catálogo, promociones y stock para Marjorie Store
  */
 const pool = require('../bd');
 const fs = require('fs');
 const path = require('path');
 
 /**
- * Obtener todos los productos para el catálogo público
+ * Obtener todos los productos (Catálogo público)
  */
 async function getAllProducts(req, res) {
   try {
@@ -19,7 +20,7 @@ async function getAllProducts(req, res) {
 }
 
 /**
- * Obtener productos detallados con el nombre de su proveedor (Para el Admin)
+ * Obtener productos con proveedores (Vista Admin)
  */
 async function getProductsWithProviders(req, res) {
   try {
@@ -37,26 +38,30 @@ async function getProductsWithProviders(req, res) {
 }
 
 /**
- * Registrar un nuevo producto (Maneja la imagen de Multer)
+ * Registrar nuevo producto
  */
 async function addProduct(req, res) {
   try {
-    const { Nombre, Categoria, Talla, Color, Precio, Stock } = req.body;
+    const { Nombre, Categoria, Talla, Color, Precio, Stock, EnPromocion, PrecioOferta, FechaFinPromo } = req.body;
     const Imagen = req.file ? req.file.filename : null;
 
     if (!Nombre || !Precio || !Stock) {
       return res.status(400).json({ ok: false, message: 'Nombre, Precio y Stock son obligatorios' });
     }
 
+    // Convertir a booleano/entero para MySQL
+    const promoActive = (EnPromocion === 'true' || EnPromocion === '1' || EnPromocion === 1) ? 1 : 0;
+
     const [result] = await pool.query(
-      'INSERT INTO producto (Nombre, Categoria, Talla, Color, Precio, Stock, Imagen) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [Nombre, Categoria, Talla || null, Color || null, Precio, Stock, Imagen]
+      `INSERT INTO producto (Nombre, Categoria, Talla, Color, Precio, Stock, Imagen, EnPromocion, PrecioOferta, FechaFinPromo) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [Nombre, Categoria, Talla || null, Color || null, Precio, Stock, Imagen, promoActive, PrecioOferta || 0, FechaFinPromo || null]
     );
 
     res.status(201).json({
       ok: true,
       message: 'Producto creado exitosamente',
-      product: { IdProducto: result.insertId, Nombre, Imagen }
+      product: { IdProducto: result.insertId, Nombre }
     });
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message });
@@ -64,73 +69,85 @@ async function addProduct(req, res) {
 }
 
 /**
- * Actualizar producto y gestionar reemplazo de imagen física
+ * Actualizar producto y promociones
  */
 async function updateProduct(req, res) {
   const { id } = req.params;
-  const { Nombre, Categoria, Talla, Color, Precio, Stock } = req.body;
+  const { Nombre, Categoria, Talla, Color, Precio, Stock, EnPromocion, PrecioOferta, FechaFinPromo } = req.body;
   const nuevaImagen = req.file ? req.file.filename : null;
 
   try {
-    // Imagen nueva, se busca la vieja para borrarla
+    // Si hay una imagen nueva, intentamos borrar la anterior del disco
     if (nuevaImagen) {
       const [rows] = await pool.query('SELECT Imagen FROM producto WHERE IdProducto = ?', [id]);
       if (rows.length > 0 && rows[0].Imagen) {
         const oldPath = path.join(__dirname, '../uploads/', rows[0].Imagen);
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
       }
     }
 
-    // Construir la consulta dinámicamente
-    let sql = 'UPDATE producto SET Nombre=?, Categoria=?, Talla=?, Color=?, Precio=?, Stock=?';
-    const params = [Nombre, Categoria, Talla, Color, Precio, Stock];
+    const promoActive = (EnPromocion === 'true' || EnPromocion === '1' || EnPromocion === 1) ? 1 : 0;
+    
+    let sql = `UPDATE producto SET Nombre=?, Categoria=?, Talla=?, Color=?, Precio=?, Stock=?, EnPromocion=?, PrecioOferta=?, FechaFinPromo=?`;
+    const params = [Nombre, Categoria, Talla, Color, Precio, Stock, promoActive, PrecioOferta || 0, FechaFinPromo || null];
 
     if (nuevaImagen) {
       sql += ', Imagen=?';
       params.push(nuevaImagen);
     }
-
     sql += ' WHERE IdProducto=?';
     params.push(id);
 
     await pool.query(sql, params);
-    res.json({ ok: true, message: 'Producto actualizado' });
+    res.json({ ok: true, message: 'Producto actualizado correctamente' });
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message });
   }
 }
 
 /**
- * Eliminar producto y su archivo de imagen asociado
+ * Ajustar Stock automáticamente (Uso interno para ventas)
+ */
+async function updateStockAfterSale(idProducto, cantidad) {
+    try {
+        await pool.query(
+            'UPDATE producto SET Stock = Stock - ? WHERE IdProducto = ?',
+            [cantidad, idProducto]
+        );
+        return true;
+    } catch (err) {
+        console.error("Error al actualizar stock:", err);
+        return false;
+    }
+}
+
+/**
+ * Eliminar producto
  */
 async function deleteProduct(req, res) {
   const { id } = req.params;
   try {
-    //  Obtener nombre de la imagen antes de borrar el registro
     const [rows] = await pool.query('SELECT Imagen FROM producto WHERE IdProducto = ?', [id]);
-    
     if (rows.length > 0 && rows[0].Imagen) {
       const filePath = path.join(__dirname, '../uploads/', rows[0].Imagen);
       if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath); // Borra la foto de la carpeta uploads
+        fs.unlinkSync(filePath);
       }
     }
-
-    // Borrar de la base de datos
-    const [result] = await pool.query('DELETE FROM producto WHERE IdProducto = ?', [id]);
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
-    }
-
-    res.json({ ok: true, message: 'Producto e imagen eliminados correctamente' });
+    await pool.query('DELETE FROM producto WHERE IdProducto = ?', [id]);
+    res.json({ ok: true, message: 'Producto eliminado' });
   } catch (err) {
-    res.status(500).json({ ok: false, message: 'Error al eliminar producto' });
+    res.status(500).json({ ok: false, message: 'Error al eliminar' });
   }
 }
 
-exports.getAllProducts = getAllProducts;
-exports.getProductsWithProviders = getProductsWithProviders;
-exports.addProduct = addProduct;
-exports.updateProduct = updateProduct;
-exports.deleteProduct = deleteProduct;
+module.exports = {
+    getAllProducts,
+    getProductsWithProviders,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    updateStockAfterSale
+};

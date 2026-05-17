@@ -86,8 +86,41 @@ async function deleteUser(req, res) {
     res.status(500).json({ ok: false, message: 'No se puede eliminar un cliente con historial de compras' });
   }
 }
+/**
+ * Actualizar perfil de un cliente
+ */
+async function updateUser(req, res) {
+  const { id, nombre, telefono, direccion } = req.body;
 
-exports.getAllUsers = getAllUsers;
-exports.registerUser = registerUser;
-exports.loginUser = loginUser;
-exports.deleteUser = deleteUser;
+  if (!id) {
+    return res.status(400).json({ ok: false, message: 'ID de usuario es requerido' });
+  }
+
+  try {
+    const query = `
+      UPDATE cliente 
+      SET NombreC = ?, Telefono = ?, Direccion = ? 
+      WHERE IdCliente = ?
+    `;
+    
+    const [result] = await pool.query(query, [nombre, telefono, direccion, id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+    }
+
+    res.json({ ok: true, message: 'Perfil actualizado correctamente' });
+  } catch (err) {
+    console.error("Error al actualizar usuario:", err);
+    res.status(500).json({ ok: false, message: 'Error interno al actualizar el perfil' });
+  }
+}
+
+/// Borra todos los exports.xxx y cámbialos por un solo objeto:
+module.exports = {
+    getAllUsers,
+    registerUser,
+    loginUser,
+    deleteUser,
+    updateUser
+};

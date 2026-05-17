@@ -1,5 +1,6 @@
 /**
  * @module ProvidersController
+ * Gestión de proveedores para Marjorie Store
  */
 const pool = require('../bd');
 
@@ -12,7 +13,7 @@ async function getProviders(req, res) {
         const [rows] = await pool.query(sql);
         res.json({ ok: true, providers: rows });
     } catch (err) {
-        console.error(err);
+        console.error("Error en getProviders:", err);
         res.status(500).json({ ok: false, message: 'Error al obtener proveedores' });
     }
 }
@@ -22,22 +23,25 @@ async function getProviders(req, res) {
  */
 async function addProvider(req, res) {
     const { Nombre, Telefono, Correo, Direccion } = req.body;
+    const Logo = req.file ? req.file.filename : null; 
     
     try {
-        // 1. Validar si el correo ya existe para evitar duplicados
-        const [existing] = await pool.query(
-            'SELECT * FROM proveedores WHERE Correo = ?',
-            [Correo]
-        );
+        // 1. Validar si el correo ya existe (para evitar duplicados en producción)
+        if (Correo) {
+            const [existing] = await pool.query(
+                'SELECT * FROM proveedores WHERE Correo = ?',
+                [Correo]
+            );
 
-        if (existing.length > 0) {
-            return res.status(400).json({ ok: false, message: 'El correo ya está registrado' });
+            if (existing.length > 0) {
+                return res.status(400).json({ ok: false, message: 'El correo ya está registrado' });
+            }
         }
 
         // 2. Insertar nuevo proveedor
         const [result] = await pool.query(
-            'INSERT INTO proveedores (Nombre, Telefono, Correo, Direccion) VALUES (?, ?, ?, ?)',
-            [Nombre, Telefono || null, Correo || null, Direccion || null]
+            'INSERT INTO proveedores (Nombre, Telefono, Correo, Direccion, Logo) VALUES (?, ?, ?, ?, ?)',
+            [Nombre, Telefono || null, Correo || null, Direccion || null, Logo]
         );
 
         res.status(201).json({ 
@@ -46,7 +50,7 @@ async function addProvider(req, res) {
             id: result.insertId 
         });
     } catch (err) {
-        console.error(err);
+        console.error("Error en addProvider:", err);
         res.status(500).json({ ok: false, message: 'Error al registrar proveedor' });
     }
 }
@@ -65,7 +69,7 @@ async function deleteProvider(req, res) {
 
         res.json({ ok: true, message: 'Proveedor eliminado exitosamente' });
     } catch (err) {
-        console.error(err);
+        console.error("Error en deleteProvider:", err);
         res.status(500).json({ ok: false, message: 'Error al eliminar proveedor' });
     }
 }
@@ -77,17 +81,26 @@ async function updateProvider(req, res) {
     const { id } = req.params;
     const { Nombre, Telefono, Correo, Direccion } = req.body;
     try {
-        await pool.query(
+        const [result] = await pool.query(
             'UPDATE proveedores SET Nombre=?, Telefono=?, Correo=?, Direccion=? WHERE IdProveedor=?',
             [Nombre, Telefono, Correo, Direccion, id]
         );
-        res.json({ ok: true, message: 'Proveedor actualizado' });
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ ok: false, message: 'Proveedor no encontrado para actualizar' });
+        }
+
+        res.json({ ok: true, message: 'Proveedor actualizado correctamente' });
     } catch (err) {
-        res.status(500).json({ ok: false, message: 'Error al actualizar' });
+        console.error("Error en updateProvider:", err);
+        res.status(500).json({ ok: false, message: 'Error al actualizar proveedor' });
     }
 }
 
-exports.getProviders = getProviders;
-exports.addProvider = addProvider;
-exports.deleteProvider = deleteProvider;
-exports.updateProvider = updateProvider;
+// Exportación limpia para las rutas
+module.exports = {
+    getProviders,
+    addProvider,
+    deleteProvider,
+    updateProvider
+};

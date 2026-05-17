@@ -1,10 +1,11 @@
 /**
  * @module ReportsController
+ * Estadísticas y resúmenes de venta para Marjorie Store
  */
 const pool = require('../bd');
 
 /**
- * Obtener el producto más vendido (Producto Estrella)
+ * Obtener el producto más vendido (Top Seller)
  */
 async function getTopProduct(req, res) {
   try {
@@ -16,9 +17,10 @@ async function getTopProduct(req, res) {
       ORDER BY unidades_vendidas DESC
       LIMIT 1
     `;
+    
     const [rows] = await pool.query(query);
     
-    // Si no hay ventas, enviamos un objeto por defecto
+    // Si no hay ventas, devolvemos un objeto por defecto para que el frontend no rompa
     const producto = rows[0] || { 
       prenda: 'Sin ventas registradas', 
       Imagen: null, 
@@ -34,7 +36,7 @@ async function getTopProduct(req, res) {
 }
 
 /**
- * Resumen de ventas del día actual
+ * Resumen de ventas del día actual (Dashboard)
  */
 async function getDailySummary(req, res) {
   try {
@@ -54,10 +56,15 @@ async function getDailySummary(req, res) {
 }
 
 /**
- * Obtener ventas filtradas por una fecha específica
+ * Obtener ventas filtradas por una fecha específica (Calendario)
  */
 async function getSalesByDate(req, res) {
-  const { fecha } = req.query; 
+  const { fecha } = req.query; // Se espera formato YYYY-MM-DD
+  
+  if (!fecha) {
+    return res.status(400).json({ ok: false, message: 'Debe proporcionar una fecha' });
+  }
+
   try {
     const [rows] = await pool.query(`
       SELECT p.*, c.NombreC 
@@ -73,7 +80,9 @@ async function getSalesByDate(req, res) {
   }
 }
 
-// Funciones exportadas para que el router pueda reconocerlas
-exports.getTopProduct = getTopProduct;
-exports.getDailySummary = getDailySummary;
-exports.getSalesByDate = getSalesByDate;
+// Exportación limpia para las rutas
+module.exports = {
+  getTopProduct,
+  getDailySummary,
+  getSalesByDate
+};

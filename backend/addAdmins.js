@@ -1,4 +1,3 @@
-// backend/addAdmins.js
 const bcrypt = require('bcrypt');
 const pool = require('./bd');
 
@@ -15,7 +14,7 @@ async function addAdmins() {
       
       if (existing.length > 0) {
         console.log(`El admin ${user.Correo} ya existe, saltando...`);
-        continue; // Pasa al siguiente admin
+        continue; 
       }
 
       // 2. Hash de la contraseña

@@ -1,51 +1,71 @@
-require('dotenv').config();
+require('dotenv').config(); // <--- ESTA LÍNEA ES EL INTERRUPTOR QUE ACTIVA TU .env
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerDocument = require('./swagger');
-
+const pool = require('./bd'); // Importamos la conexión a la BD para las notificaciones
 const app = express();
 
-// 1. WEBHOOK ESPECIAL
-// Stripe 
-app.post('/api/stripe/webhook', express.raw({type: 'application/json'}), require('./routes/stripe'));
+// --- MIDDLEWARES ---
+app.use(cors()); // Permite la comunicación con el frontend (puerto 5500)
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
 
-// 2. Middlewares Globales
-app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'], credentials: true }));
-app.use(express.json()); // JSON para todas las demás rutas
+// Carpeta de imágenes (Servir archivos estáticos)
+app.use('/uploads', express.static(path.join(__dirname, 'Uploads')));
 
-// 3. Archivos Estáticos
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(path.join(__dirname, '../frontend')));
+// --- IMPORTACIÓN DE RUTAS ---
+const authRoutes = require('./routes/auth');      
+const stripeRoutes = require('./routes/stripe');  
+const productRoutes = require('./routes/products');
+const cartRoutes    = require('./routes/cart');
+const salesRoutes   = require('./routes/sales');
+const providerRoutes = require('./routes/providers');
+const reportRoutes  = require('./routes/reports');
+const userRoutes    = require('./routes/users');
 
-// 4. Configuración de Swagger
-const specs = swaggerJsdoc({
-  swaggerDefinition: swaggerDocument,
-  apis: ['./swagger.js'],
+// --- CONFIGURACIÓN DE ENDPOINTS ---
+app.use('/api/auth', authRoutes);         
+app.use('/api/stripe', stripeRoutes);     
+app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/providers', providerRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/users', userRoutes);
+
+// --- NUEVO ENDPOINT PARA NOTIFICACIONES ---
+// Este endpoint alimenta la campana de clientes y administrador
+app.get('/api/notificaciones/:destino/:idUsuario', async (req, res) => {
+    const { destino, idUsuario } = req.params;
+    try {
+        let query = '';
+        let params = [];
+
+        if (destino === 'admin') {
+            // El admin ve todas las notificaciones destinadas a 'admin'
+            query = 'SELECT * FROM notificaciones WHERE Destino = "admin" ORDER BY Fecha DESC LIMIT 15';
+        } else {
+            // El cliente ve solo las suyas
+            query = 'SELECT * FROM notificaciones WHERE Destino = "cliente" AND IdUsuario = ? ORDER BY Fecha DESC LIMIT 15';
+            params.push(idUsuario);
+        }
+
+        const [rows] = await pool.query(query, params);
+        res.json({ ok: true, notificaciones: rows });
+    } catch (err) {
+        console.error("Error al obtener notificaciones:", err);
+        res.status(500).json({ ok: false, message: 'Error en el servidor' });
+    }
 });
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
-// 5. Rutas de la API
-app.use('/api/products', require('./routes/products'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/providers', require('./routes/providers'));
-app.use('/api/sales', require('./routes/sales'));
-app.use('/api/reports', require('./routes/reports'));
-app.use('/api/cart', require('./routes/cart'));
-app.use('/api/auth', require('./routes/auth'));
-// Rutas de Stripe que NO son webhook (como la creación de sesión)
-app.use('/api/stripe', require('./routes/stripe'));
-
-// 6. Ruta Raíz
+// Ruta de prueba
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+  res.send('<h1>👗 Marjorie Store API en línea</h1>');
 });
 
-// 7. Inicio del Servidor
-const PORT = process.env.PORT || 3000;
+// --- LANZAMIENTO DEL SERVIDOR ---
+const PORT = process.env.PORT || 3000; 
 app.listen(PORT, () => {
-  console.log(` Servidor de Marjorie Store corriendo en http://localhost:${PORT}`);
-  console.log(` Documentación API: http://localhost:${PORT}/api-docs`);
+  console.log(`\n🚀 Servidor Marjorie Store corriendo en http://localhost:${PORT}`);
+  console.log(`✅ Sistema de Notificaciones y Gestión de Stock activado.\n`);
 });

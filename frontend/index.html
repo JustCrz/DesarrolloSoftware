@@ -3,18 +3,42 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Marjorie Store</title>
+  <title>Marjorie Store | Boutique Premium</title>
+  
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    /* Estilos para la nueva campana e imagen */
+    .noti-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #ff3e3e;
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 50%;
+      border: 2px solid #000;
+      display: none;
+    }
+    .campana-img {
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .campana-img:hover { transform: scale(1.1); }
+  </style>
 </head>
 <body>
 
 <header>
   <div class="header-inner">
     <div class="brand">
-      <h1>𝓜𝓪𝓻𝓳𝓸𝓻𝓲𝓮 𝓢𝓽𝓸𝓻𝓮</h1>
+      <h1>Marjorie Store</h1>
       <p class="tagline">Moda femenina · Estilo moderno</p>
     </div>
     
@@ -22,12 +46,31 @@
       <div class="nav-modules">
         <button id="btnInicio" class="nav-link" onclick="showLanding()">Inicio</button>
         <button class="nav-link" onclick="showCatalog()">Catálogo</button>
-        <button class="nav-link" onclick="showPromocionesPage()" style="color: var(--accent); font-weight: bold;">⚡ Ofertas</button>
-         <button id="btnHistorial" onclick="showUserHistory()" class="hidden nav-link">Mis Pedidos</button>
+        <button class="nav-link nav-ofertas" onclick="showPromocionesPage()" style="color: var(--accent); font-weight: bold;">⚡ Ofertas</button>
+        
+        <button id="btnPerfil" onclick="showUserProfile()" class="hidden nav-link"> Mi Perfil</button>
+        <button id="btnHistorial" onclick="showUserHistory()" class="hidden nav-link">Mis Pedidos</button>
+
+        <div id="notifContainer" class="hidden" style="position: relative; display: inline-block; vertical-align: middle; margin-right: 15px;">
+            <div onclick="toggleNotiBox()" style="position: relative; display: inline-block;">
+                <img src="https://img.icons8.com/ios-filled/50/ffffff/appointment-reminders--v1.png" alt="Notificaciones" class="campana-img" id="imgCampana">
+                <span id="notiCount" class="noti-badge">0</span>
+            </div>
+            
+            <div id="notiBox" class="noti-dropdown hidden" style="position: absolute; right: 0; top: 40px; background: #111; border: 1px solid #333; width: 280px; z-index: 1000; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div class="noti-header" style="padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="margin:0; font-size: 0.9rem;">Notificaciones</h4>
+                    <button onclick="toggleNotiBox()" style="background:none; border:none; color:white; cursor:pointer; font-size: 1.2rem;">&times;</button>
+                </div>
+                <div id="notiList" style="max-height: 300px; overflow-y: auto; padding: 10px;">
+                    <p class="empty-noti" style="font-size: 0.8rem; color: #666; text-align: center;">No tienes novedades por ahora </p>
+                </div>
+            </div>
+        </div>
 
         <div id="authButtons" class="auth-group">
           <button onclick="showLogin()" class="btn-sm">Iniciar sesión</button>
-          <button class="btn-sm secondary" onclick="showRegister()">Registrarse</button>
+          <button onclick="showRegister()" class="btn-sm secondary">Registrarse</button>
         </div>
 
         <button id="btnCart" onclick="mostrarCarrito()" class="hidden cart-btn">
@@ -36,16 +79,13 @@
         <button id="btnLogout" onclick="logout()" class="hidden btn-sm secondary">Salir</button>
       </div>
     </nav>
-    
   </div>
 </header>
 
 <main>
   <section id="landing">
     <div class="main-layout">
-      
       <section class="main-content">
-        
         <section id="promociones" class="hidden" style="margin-bottom: 30px;">
           <div class="promo-header">
             <h3 style="color: #ff3e3e;">⚡ Ofertas Relámpago</h3>
@@ -57,7 +97,7 @@
           <div class="hero-overlay">
             <span class="badge-new">🌸 NUEVA COLECCIÓN</span>
             <h2>PRIMAVERA DINÁMICA</h2>
-            <button class="btn-hero" onclick="showCatalog()">Ver detalles</button>
+            <button class="btn-hero" onclick="showCatalog()">Explorar ahora</button>
           </div>
         </div>
 
@@ -65,194 +105,346 @@
           <h3>𝓣𝓸𝓹 𝓟𝓻𝓸𝓭𝓾𝓬𝓽𝓸𝓼 𝓭𝓮𝓵 𝓜𝓮𝓼</h3>
           <div id="bestSellersGrid" class="grid"></div>
         </section>
-
       </section>
 
       <aside class="sidebar-right">
-        <div class="card">
+        <div class="card side-card">
           <h4>Contacto Marjorie Millán</h4>
-          <p>📞 +52 662 348 4659</p>
+          <p><span>📞</span> +52 662 348 4659</p>
           <div class="social-links">
-            <p>📱 <b>IG:</b> @marjoriesstore_</p>
-            <p>📘 <b>FB:</b> Marjorie Millán</p>
+            <p><span>📱</span> <b>IG:</b> @marjoriesstore_</p>
+            <p><span>📘</span> <b>FB:</b> Marjorie Millán</p>
           </div>
         </div>
-        <div class="card">
-          <h4>¿Por qué comprar aquí?</h4>
-          <p>𝙴𝚗𝚟𝚒𝚘𝚜 𝚂𝚎𝚐𝚞𝚛𝚘𝚜</p>
-          <p>𝙲𝚊𝚕𝚒𝚍𝚊𝚍 𝙶𝚊𝚛𝚊𝚗𝚝𝚒𝚣𝚊𝚍𝚊</p>
+        
+        <div class="card side-card">
+          <h4>Excelencia Marjorie</h4>
+          <p> Envíos Seguros y Rápidos</p>
+          <p> Calidad Garantizada</p>
+          <p> Atención Personalizada</p>
         </div>
-        <div class="card">
+        
+        <div class="card side-card">
           <h4>Novedades Instantáneas</h4>
           <div class="news-item"><p>🛍️ Nuevas llegadas en Accesorios</p></div>
-          <div class="news-item"><p>👥 3 Clientes comprando ahora</p>
-          </div>
+          <div class="news-item"><p>👥 3 Clientes comprando ahora</p></div>
         </div>
       </aside>
-
-    </div> </section> </main>
-
-  <section id="login" class="card modal hidden">
-    <h3>Iniciar sesión</h3>
-    <input id="loginUser" type="email" placeholder="Email" />
-    <input id="loginPass" placeholder="Contraseña" type="password" />
-    <div class="actions">
-      <button onclick="login()">Ingresar</button>
-      <button class="secondary" onclick="showLanding()">Cancelar</button>
     </div>
-    <p id="loginMsg" class="error"></p>
   </section>
 
-  <section id="register" class="card modal hidden">
-    <h3>Registrarse</h3>
-    <input id="regUser" placeholder="Nombre" />
-    <input id="regEmail" type="email" placeholder="Email" />
-    <input id="regTelefono" placeholder="Teléfono" />
-    <input id="regDireccion" placeholder="Dirección" />
-    <input id="regPass" placeholder="Contraseña" type="password" />
-    <div class="actions">
-      <button onclick="register()">Registrar</button>
-      <button class="secondary" onclick="showLanding()">Cancelar</button>
+  <section id="userProfile" class="card hidden" style="max-width: 600px; margin: 20px auto;">
+    <div class="admin-section-header">
+        <h3> Mi Perfil</h3>
+        <p>Actualiza tu información de contacto y envío.</p>
     </div>
-    <p id="regMsg" class="success"></p>
+    <form id="formActualizarPerfil" class="admin-form-grid">
+        <div class="input-group">
+            <label>Nombre Completo *</label>
+            <input type="text" id="perfilNombre" required />
+        </div>
+        <div class="input-group">
+            <label>Teléfono *</label>
+            <input type="tel" id="perfilTelefono" required />
+        </div>
+        <div class="input-group full-width">
+            <label>Dirección de Envío *</label>
+            <input type="text" id="perfilDireccion" required />
+        </div>
+        <div class="form-actions-admin full-width">
+            <button type="submit" class="btn-save-admin">Guardar Cambios</button>
+            <button type="button" class="btn-reset-admin" onclick="showCatalog()">Cancelar</button>
+        </div>
+    </form>
+  </section>
+
+  <section id="login" class="hidden">
+    <div class="login-container">
+      <div class="login-header">
+        <h2>Bienvenida</h2>
+        <p>Ingresa a tu cuenta exclusiva de Marjorie Store</p>
+      </div>
+      <div class="login-body">
+        <input id="loginUser" type="email" placeholder="Correo Electrónico" />
+        <input id="loginPass" type="password" placeholder="Contraseña" />
+        <div class="actions">
+          <button class="btn-login" onclick="login()">Ingresar</button>
+          <button class="secondary" onclick="showLanding()">Cancelar</button>
+        </div>
+      </div>
+      <p id="loginMsg" class="error"></p>
+    </div>
+  </section>
+
+  <section id="register" class="hidden">
+    <div class="login-container">
+      <div class="login-header">
+        <h2>Crear Cuenta</h2>
+        <p>Únete a nuestra comunidad de estilo</p>
+      </div>
+      <div class="login-body">
+        <input id="regUser" placeholder="Nombre Completo" />
+        <input id="regEmail" type="email" placeholder="Email" />
+        <input id="regTelefono" placeholder="Teléfono" />
+        <input id="regDireccion" placeholder="Dirección de Envío" />
+        <input id="regPass" placeholder="Contraseña" type="password" />
+        <div class="actions">
+          <button class="btn-login" onclick="register()">Registrar</button>
+          <button class="secondary" onclick="showLanding()">Cancelar</button>
+        </div>
+      </div>
+      <p id="regMsg" class="success"></p>
+    </div>
   </section>
 
   <section id="catalog" class="hidden">
-    <div class="card" style="background: var(--accent-soft); margin-bottom: 20px; border: 2px solid var(--accent);">
-        <h3 style="margin: 0 0 10px 0;"> Producto Estrella</h3>
-        <div id="infoEstrellaCliente">Cargando producto estrella...</div>
+    <div id="infoEstrellaCliente">
+        <p style="text-align:center; padding:50px; color: white;">Cargando colección estrella...</p>
     </div>
     <div id="catalogGrid" class="grid"></div>
   </section>
 
-  <section id="productDetail" class="card modal hidden"></section>
-<section id="cart" class="card hidden">
-  <h3>Tu carrito</h3>
-  <div id="cartContents"></div>
-  <div class="cart-summary" style="text-align: right; padding: 20px; border-top: 2px solid #eee;">
-      <h4>Total: <span id="totalDisplay">$0.00</span></h4>
-      <button id="btnPagar" class="hidden btn-hero" onclick="finalizarCompra()" style="width: 100%; margin-top: 10px;">
-          Finalizar Compra
-      </button>
-  </div>
-</section>
-    <section id="userHistory" class="card hidden">
-  <h3>Mis Pedidos Recientes</h3>
-  <div id="historyList" class="list-providers">
+  <section id="cart" class="card hidden">
+    <h3>Tu carrito</h3>
+    <div id="cartContents"></div>
+    <div class="cart-summary" style="text-align: right; padding: 20px; border-top: 2px solid #333;">
+        <h4>Total: <span id="totalDisplay">$0.00</span></h4>
+        <button id="btnPagar" class="hidden btn-hero" onclick="finalizarCompra()" style="width: 100%; margin-top: 10px;">
+            Finalizar Compra
+        </button>
     </div>
-  <button class="secondary" onclick="showCatalog()" style="margin-top: 15px;">Volver al Catálogo</button>
-</section>
+  </section>
 
+ <section id="userHistory" class="card hidden">
+    <h3>Mis Pedidos Recientes</h3>
+    <div id="historyList" class="list-providers"></div>
+    <button class="secondary" onclick="showCatalog()" style="margin-top: 15px;">Volver al Catálogo</button>
+</section>
 
   <section id="adminPanel" class="card hidden">
-    <h2>Panel administrador</h2>
+    <div class="admin-header-flex" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2> Panel Administrador</h2>
+    </div>
+    
     <div class="admin-inner">
       <aside class="admin-nav">
-        <button onclick="showAdminSection('inventario')">Gestionar Inventario</button>
-        <button onclick="showAdminSection('proveedores')">Control Proveedores</button>
-        <button onclick="showAdminSection('catalogo')">Control Catálogo</button>
-        <button onclick="showAdminSection('estadisticas')">Estadísticas</button>
-        <button onclick="showAdminSection('pedidos')">Gestionar Entregas </button>
-        <button onclick="showAdminSection('pagos')">Gestionar Pagos</button>
+        <div class="nav-brand-admin">Menú Gestión</div>
+        <button onclick="showAdminSection('inventario')"> Gestionar Inventario</button>
+        <button onclick="showAdminSection('proveedores')"> Control Proveedores</button>
+        <button onclick="showAdminSection('catalogo')"> Control Catálogo</button>
+        <button onclick="showAdminSection('estadisticas')"> Reportes y Estadísticas</button>
+        <button onclick="showAdminSection('pedidos')"> Gestionar Entregas</button>
+        <button onclick="showAdminSection('pagos')"> Gestionar Pagos</button>
+        <button onclick="showLanding()" class="btn-exit-admin" style="background: #331a1a; color: #ff4d4d; margin-top: 20px;">Salir del Panel</button>
       </aside>
 
       <div class="admin-content">
         <div id="adminInventario" class="adminSection hidden">
-          <h3>Gestionar Inventario</h3>
-          <form id="formProducto">
-            <input id="nombre" placeholder="Nombre producto" required />
-            <input id="categoria" placeholder="Categoría" />
-            <input id="talla" placeholder="Talla" />
-            <input id="color" placeholder="Color" />
-            <input id="precio" placeholder="Precio" type="number" required />
-            <input id="stock" placeholder="Stock" type="number" required />
-            <input id="imagen" type="file" accept="image/*" />
-            <div class="card" style="padding: 15px; border: 1px solid #ddd;">
-            <label style="display: flex; align-items: center; gap: 10px;">
-             <input type="checkbox" id="enPromocion" style="width: auto;"> ¿Está en promoción?
-          </label>
-           <input id="precioOferta" type="number" placeholder="Precio de oferta" />
-             <label>Fin de promoción:</label>
-           <input id="fechaFinPromo" type="datetime-local" />
+          <div class="admin-section-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3>Gestión de Inventario</h3>
+                <p>Actualiza el stock y los datos base de tus productos.</p>
+            </div>
+            <button class="btn-hero" onclick="abrirModalAjusteStock()" style="font-size: 0.8rem; padding: 10px;"> Ajuste Manual Rápido</button>
           </div>
+          
+          <form id="formProducto" class="admin-form-grid">
+            <div class="input-group">
+                <label>Nombre del Producto</label>
+                <input id="nombre" placeholder="Ej. Chaleco Sastre" required />
+            </div>
+            <div class="input-group">
+                <label>Categoría</label>
+                <input id="categoria" placeholder="Ej. Formal" />
+            </div>
+            <div class="input-group">
+                <label>Talla</label>
+                <input id="talla" placeholder="S, M, L..." />
+            </div>
+            <div class="input-group">
+                <label>Color</label>
+                <input id="color" placeholder="Ej. Negro" />
+            </div>
+            <div class="input-group">
+                <label>Precio</label>
+                <input id="precio" type="number" placeholder="0.00" required />
+            </div>
+            <div class="input-group">
+                <label>Unidades en Stock</label>
+                <input id="stock" type="number" placeholder="0" required />
+            </div>
+            <div class="input-group full-width">
+                <label>Imagen del Producto</label>
+                <input id="imagen" type="file" accept="image/*" class="file-input" />
+            </div>
 
-            <div class="actions">
-              <button type="submit">Guardar Producto</button>
-              <button type="button" class="secondary" onclick="renderAdminList()">Cancelar</button>
+            <div class="form-actions-admin full-width">
+              <button type="submit" class="btn-save-admin">Guardar en Inventario</button>
+              <button type="reset" class="btn-reset-admin">Limpiar Formulario</button>
             </div>
           </form>
-          <div id="adminList" class="grid admin-grid"></div>
+          <div id="adminList" class="grid admin-grid" style="margin-top: 30px;"></div>
         </div>
 
         <div id="adminProveedores" class="adminSection hidden">
-          <h3>Control Proveedores</h3>
-          <form id="formProveedor">
-            <input id="provNombre" placeholder="Nombre proveedor" required />
-            <input id="provTelefono" type="tel" placeholder="Teléfono" required />
-            <input id="provEmail" type="email" placeholder="Email" />
-            <input id="provDireccion" placeholder="Dirección" required />
-            <button type="submit">Agregar proveedor</button>
+          <div class="admin-section-header">
+            <h3> Control de Proveedores</h3>
+            <p>Registra tus proveedores y sube su logo para identificarlos mejor.</p>
+          </div>
+          <form id="formProveedor" class="admin-form-grid">
+            <div class="input-group">
+                <label>Nombre Empresa</label>
+                <input id="provNombre" placeholder="Nombre proveedor" required />
+            </div>
+            <div class="input-group">
+                <label>Teléfono</label>
+                <input id="provTelefono" type="tel" placeholder="Teléfono" required />
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input id="provEmail" type="email" placeholder="Email" />
+            </div>
+            <div class="input-group">
+                <label>Dirección</label>
+                <input id="provDireccion" placeholder="Dirección" required />
+            </div>
+            <div class="input-group full-width">
+                <label>Logo del Proveedor</label>
+                <input id="provLogo" type="file" accept="image/*" class="file-input" />
+            </div>
+            <div class="form-actions-admin full-width">
+                <button type="submit" class="btn-save-admin">Agregar Proveedor</button>
+                <button type="reset" class="btn-reset-admin">Limpiar</button>
+            </div>
           </form>
-          <div id="listaProveedores" class="list-providers"></div>
+          <div id="listaProveedores" style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;"></div>
         </div>
 
         <div id="adminCatalogo" class="adminSection hidden">
-          <h3>Vista Previa del Catálogo</h3>
+          <div class="admin-section-header">
+            <h3> Control de Catálogo y Ofertas</h3>
+            <p>Configura descuentos y visibilidad aquí.</p>
+          </div>
+          
+          <div class="card promo-config" style="padding: 15px; border: 1px solid var(--accent); margin-bottom: 20px; background: #1a1a1a;">
+                <label style="display: flex; align-items: center; gap: 10px; color: white; cursor: pointer;">
+                    <input type="checkbox" id="enPromocion" style="width: auto;"> ¿Activar promoción en el producto seleccionado?
+                </label>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input id="precioOferta" type="number" placeholder="Precio de oferta" style="flex: 1;" />
+                    <input id="fechaFinPromo" type="datetime-local" style="flex: 1;" />
+                </div>
+                <small style="color: #888; margin-top: 5px; display: block;">Nota: El precio de oferta se mostrará resaltado en la tienda.</small>
+          </div>
           <div id="catalogAdmin" class="grid"></div>
         </div>
 
         <div id="adminEstadisticas" class="adminSection hidden">
-          <h3>📊 Resumen de Rendimiento</h3>
-          <div class="card" style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center;">
-            <label>Filtrar por fecha:</label>
-            <input type="date" id="filtroFechaVenta">
-            <button onclick="filtrarVentas()">Buscar</button>
+          <div class="admin-section-header">
+            <h3> Centro de Reportes Avanzados</h3>
+            <p>Analiza el flujo de caja y el estado de tus existencias.</p>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-              <div class="card center">
-                  <h4> Ingresos</h4>
-                  <h2 id="dashIngresosPeriodo">$0</h2>
+
+          <div class="reports-grid">
+              <div class="card stat-card">
+                  <div class="card-header-flex">
+                      <h4> Reporte de Ventas</h4>
+                      <button class="btn-sm" onclick="exportarVentas()"> Exportar</button>
+                  </div>
+                  <div class="filter-group" style="margin: 15px 0;">
+                      <div class="input-group">
+                          <label>Desde:</label>
+                          <input type="date" id="reporteVentaInicio">
+                      </div>
+                      <div class="input-group">
+                          <label>Hasta:</label>
+                          <input type="date" id="reporteVentaFin">
+                      </div>
+                      <button class="btn-login" style="width: 100%;" onclick="generarReporteVentas()">Calcular Ingresos</button>
+                  </div>
+                  <div class="report-result" style="background: #000; padding: 15px; border-radius: 8px;">
+                      <p>Ingresos Totales: <span id="ingresosTotalesReporte" class="highlight" style="color: var(--accent); font-size: 1.5rem;">$0.00</span></p>
+                      <p>Pedidos en el periodo: <span id="pedidosTotalesReporte">0</span></p>
+                  </div>
               </div>
-              <div class="card center">
-                  <h4> Pedidos</h4>
-                  <h2 id="dashPedidosPeriodo">0</h2>
+
+              <div class="card stat-card">
+                  <div class="card-header-flex">
+                      <h4> Alertas de Actividad</h4>
+                      <button class="btn-sm" onclick="limpiarNotificacionesAdmin()" style="background:transparent; color:#888;">Limpiar</button>
+                  </div>
+                  <div id="adminNotificaciones" style="background: #0a0a0a; border-radius: 8px; padding: 10px; height: 180px; overflow-y: auto; margin-top: 10px; border: 1px solid #222;">
+                      <p style="color: #555; font-size: 0.8rem; text-align: center; margin-top: 20px;">Sin alertas pendientes.</p>
+                  </div>
+              </div>
+
+              <div class="card stat-card">
+                  <div class="card-header-flex">
+                      <h4> Reporte de Inventario</h4>
+                      <button class="btn-sm secondary" onclick="exportarInventarioCompleto()"> Lista Total</button>
+                  </div>
+                  <div class="stock-critico" style="margin-top: 15px;">
+                      <p style="color: #ff4d4d; font-weight: bold; margin-bottom: 10px;"> Alerta Stock Crítico:</p>
+                      <div id="listaStockCritico" class="mini-list" style="background: #050505; height: 150px; overflow-y: auto; padding: 10px; border-radius: 5px;">
+                          <p style="color: #666; font-size: 0.8rem;">No hay productos con bajo stock.</p>
+                      </div>
+                  </div>
               </div>
           </div>
-          <h4> Producto Más Vendido</h4>
-          <div id="productoEstrellaContenedor" class="card" style="display: flex; align-items: center; gap: 15px; background: #f0f7ff;">
-            <p>Cargando datos...</p>
-          </div>
-          <h4>📄 Historial de Ventas</h4>
+          <h4 style="margin-top: 30px;"> Historial Detallado de Ventas</h4>
           <div id="listaVentasHistorial" class="list-providers"></div>
         </div>
 
-       <div id="adminPagos" class="adminSection hidden">
+        <div id="adminPagos" class="adminSection hidden">
           <h3>Gestión de Pagos</h3>
           <div id="pagosLista"></div>
-          <p id="totalPagos" style="font-weight: bold; font-size: 1.2rem;"></p>
+          <p id="totalPagos" style="font-weight: bold; font-size: 1.2rem; color: var(--accent); margin-top: 20px;"></p>
         </div>
 
         <div id="adminOrders" class="adminSection hidden">
-            <h3>🚚 Gestión de Entregas</h3>
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
-                <div id="adminOrdersList" class="list-providers" style="max-height: 500px; overflow-y: auto;">
-                    </div>
-                <div class="card" style="padding: 10px;">
-                    <div id="mapaAdmin" style="height: 450px; width: 100%; border-radius: 12px; border: 2px solid var(--accent);"></div>
-                    <p style="text-align: center; font-size: 0.8rem; color: #888; margin-top: 5px;">
-                        Haz clic en un pedido para ver la ubicación de entrega.
+            <h3>Gestión de Entregas</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px;">
+                <div id="adminOrdersList" class="list-providers" style="max-height: 600px; overflow-y: auto;"></div>
+                <div class="card" style="padding: 15px; background: #000;">
+                    <div id="mapaAdmin" style="height: 500px; width: 100%; border-radius: 20px; border: 2px solid var(--accent);"></div>
+                    <p style="text-align: center; font-size: 0.8rem; color: #888; margin-top: 10px;">
+                        Haz clic en un pedido de la lista para localizar el destino.
                     </p>
                 </div>
             </div>
         </div>
-      </div> </div> </section> </main>
+      </div> 
+    </div> 
+  </section> 
+</main>
 
 <div id="cartMessage" class="toast"></div>
 
 <div id="modalProducto" class="modal-overlay hidden">
   <div class="modal-content">
-    <button class="close-modal-btn" onclick="cerrarModal()">X</button>
+    <button class="close-modal-btn" onclick="cerrarModal()">×</button>
     <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="modalAjusteStock" class="modal-overlay hidden">
+  <div class="modal-content" style="max-width: 400px;">
+    <div class="admin-section-header">
+        <h3> Ajuste de Inventario</h3>
+        <p>Modifica existencias manualmente.</p>
+    </div>
+    <div class="input-group">
+        <label>Producto</label>
+        <select id="selectProductoStock" style="width: 100%; padding: 10px; background: #111; color: white; border: 1px solid #333;"></select>
+    </div>
+    <div class="input-group" style="margin-top: 15px;">
+        <label>Nueva Cantidad Total</label>
+        <input type="number" id="inputNuevaCantidad" placeholder="0" style="width: 100%;">
+    </div>
+    <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button class="btn-save-admin" onclick="confirmarAjusteStock()" style="flex: 1;">Actualizar</button>
+        <button class="btn-reset-admin" onclick="document.getElementById('modalAjusteStock').classList.add('hidden')" style="flex: 1;">Cerrar</button>
+    </div>
   </div>
 </div>
 

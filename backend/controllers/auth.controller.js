@@ -77,5 +77,7 @@ async function authlogin(req, res) {
   }
 }
 
-// Exportamos la función para que el Router la pueda usar
-exports.authlogin = authlogin;
+// Cambia el final por:
+module.exports = {
+    authlogin
+};

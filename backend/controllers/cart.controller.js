@@ -1,19 +1,15 @@
 /**
  * @module CartController
- * Controlador para gestionar el carrito de compras de Marjorie Store
  */
-const pool = require('../bd');
+const poolReal = require('../bd');
 
 /**
- * Función interna para recalcular el total de un carrito
- * Se ejecuta automáticamente tras cualquier cambio en los productos.
+ * Función interna modificada para aceptar el pool (necesario para tests)
  */
-async function actualizarTotalCarrito(idCarrito) {
+async function actualizarTotalCarrito(idCarrito, pool = poolReal) {
   const [rows] = await pool.query(
-    `SELECT SUM(p.Precio * cp.Cantidad) AS Total 
-     FROM carritoproducto cp 
-     JOIN producto p ON cp.IdProducto = p.IdProducto 
-     WHERE cp.IdCarrito = ?`,
+    `SELECT SUM(IF(p.EnPromocion = 1 AND p.PrecioOferta > 0, p.PrecioOferta, p.Precio) * cp.Cantidad) AS Total 
+     FROM carritoproducto cp JOIN producto p ON cp.IdProducto = p.IdProducto WHERE cp.IdCarrito = ?`,
     [idCarrito]
   );
   const total = rows[0].Total || 0;
@@ -21,40 +17,28 @@ async function actualizarTotalCarrito(idCarrito) {
   return total;
 }
 
-/**
- * Obtener el carrito de un cliente con sus productos y detalles
- */
-async function getCartClient(req, res) {
+async function getCartClient(req, res, { pool = poolReal } = {}) {
   const { idCliente } = req.params;
   try {
     const [carritoRows] = await pool.query('SELECT * FROM carrito WHERE IdCliente = ?', [idCliente]);
-    
     if (carritoRows.length === 0) {
       return res.json({ ok: true, carrito: { productos: [], Total: 0 } });
     }
-
     const carrito = carritoRows[0];
     const [productos] = await pool.query(
       `SELECT cp.IdProducto, p.Nombre, p.Precio, p.Imagen, cp.Cantidad, (p.Precio * cp.Cantidad) as Subtotal
-       FROM carritoproducto cp
-       JOIN producto p ON cp.IdProducto = p.IdProducto
-       WHERE cp.IdCarrito = ?`,
+       FROM carritoproducto cp JOIN producto p ON cp.IdProducto = p.IdProducto WHERE cp.IdCarrito = ?`,
       [carrito.IdCarrito]
     );
-
     res.json({ ok: true, carrito: { ...carrito, productos } });
   } catch (err) {
     res.status(500).json({ ok: false, message: 'Error al obtener carrito' });
   }
 }
 
-/**
- * Agregar producto al carrito 
- */
-async function addProductToCart(req, res) {
+async function addProductToCart(req, res, { pool = poolReal } = {}) {
   const { idCliente } = req.params;
   const { IdProducto, Cantidad } = req.body;
-
   try {
     let [carritoRows] = await pool.query('SELECT IdCarrito FROM carrito WHERE IdCliente = ?', [idCliente]);
     let idCarrito;
@@ -72,73 +56,52 @@ async function addProductToCart(req, res) {
     );
 
     if (prodExistente.length > 0) {
-      await pool.query(
-        'UPDATE carritoproducto SET Cantidad = Cantidad + ? WHERE IdCarrito = ? AND IdProducto = ?',
-        [Cantidad, idCarrito, IdProducto]
-      );
+      await pool.query('UPDATE carritoproducto SET Cantidad = Cantidad + ? WHERE IdCarrito = ? AND IdProducto = ?', [Cantidad, idCarrito, IdProducto]);
     } else {
-      await pool.query(
-        'INSERT INTO carritoproducto (IdCarrito, IdProducto, Cantidad) VALUES (?, ?, ?)',
-        [idCarrito, IdProducto, Cantidad]
-      );
+      await pool.query('INSERT INTO carritoproducto (IdCarrito, IdProducto, Cantidad) VALUES (?, ?, ?)', [idCarrito, IdProducto, Cantidad]);
     }
 
-    const nuevoTotal = await actualizarTotalCarrito(idCarrito);
+    const nuevoTotal = await actualizarTotalCarrito(idCarrito, pool);
     res.json({ ok: true, message: 'Producto añadido', Total: nuevoTotal });
   } catch (err) {
     res.status(500).json({ ok: false, message: 'Error al añadir producto' });
   }
 }
 
-/**
- * Actualizar cantidad de un producto o eliminarlo si la cantidad es <= 0
- */
-async function updateProductQuantity(req, res) {
+async function updateProductQuantity(req, res, { pool = poolReal } = {}) {
   const { idCliente } = req.params;
   const { IdProducto, Cantidad } = req.body;
-
   try {
     const [carritoRows] = await pool.query('SELECT IdCarrito FROM carrito WHERE IdCliente = ?', [idCliente]);
     if (carritoRows.length === 0) return res.status(404).json({ ok: false, message: 'Carrito no encontrado' });
 
     const idCarrito = carritoRows[0].IdCarrito;
-
     if (parseInt(Cantidad) <= 0) {
       await pool.query('DELETE FROM carritoproducto WHERE IdCarrito = ? AND IdProducto = ?', [idCarrito, IdProducto]);
     } else {
       await pool.query('UPDATE carritoproducto SET Cantidad = ? WHERE IdCarrito = ? AND IdProducto = ?', [Cantidad, idCarrito, IdProducto]);
     }
-
-    const nuevoTotal = await actualizarTotalCarrito(idCarrito);
+    const nuevoTotal = await actualizarTotalCarrito(idCarrito, pool);
     res.json({ ok: true, message: 'Cantidad actualizada', Total: nuevoTotal });
   } catch (err) {
     res.status(500).json({ ok: false, message: 'Error al actualizar cantidad' });
   }
 }
 
-/**
- * Eliminar un producto específico del carrito
- */
-async function removeProductFromCart(req, res) {
+async function removeProductFromCart(req, res, { pool = poolReal } = {}) {
   const { idCliente, idProducto } = req.params;
   try {
     const [carrito] = await pool.query('SELECT IdCarrito FROM carrito WHERE IdCliente = ?', [idCliente]);
     if (carrito.length === 0) return res.status(404).json({ ok: false });
-
-    await pool.query('DELETE FROM carritoproducto WHERE IdCarrito = ? AND IdProducto = ?', 
-      [carrito[0].IdCarrito, idProducto]);
-
-    const nuevoTotal = await actualizarTotalCarrito(carrito[0].IdCarrito);
+    await pool.query('DELETE FROM carritoproducto WHERE IdCarrito = ? AND IdProducto = ?', [carrito[0].IdCarrito, idProducto]);
+    const nuevoTotal = await actualizarTotalCarrito(carrito[0].IdCarrito, pool);
     res.json({ ok: true, Total: nuevoTotal });
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message });
   }
 }
 
-/**
- * Vaciar todo el carrito
- */
-async function clearCart(req, res) {
+async function clearCart(req, res, { pool = poolReal } = {}) {
   const { idCliente } = req.params;
   try {
     const [carrito] = await pool.query('SELECT IdCarrito FROM carrito WHERE IdCliente = ?', [idCliente]);
@@ -152,7 +115,6 @@ async function clearCart(req, res) {
   }
 }
 
-// Exportación de todas las funciones para las rutas
 exports.getCartClient = getCartClient;
 exports.addProductToCart = addProductToCart;
 exports.updateProductQuantity = updateProductQuantity;
