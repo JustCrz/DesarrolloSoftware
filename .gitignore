@@ -1,6 +1,6 @@
 /backend/node_modules/
-/backend/uploads/
-/backend/tests/
+
 /backend/reporte_complejidad/
 /backend/coverage/
+/backend/Uploads/
 .env

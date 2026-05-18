@@ -1,6 +1,5 @@
 jest.mock('../../../bd', () => ({
-  query: jest.fn(),
-  getConnection: jest.fn()
+  query: jest.fn()
 }));
 
 const { updateProduct } = require('../../../services/products.service');
@@ -16,19 +15,11 @@ describe('UPDATE PRODUCT', () => {
 
   test('debe actualizar producto correctamente', async () => {
 
-    const mockConnection = {
-      query: jest.fn()
-        .mockResolvedValueOnce([[{ Imagen: null }]]) // select imagen
-        .mockResolvedValueOnce([{}])                 // update producto
-        .mockResolvedValueOnce([[{ IdVariante: 1 }]]) // select variante
-        .mockResolvedValueOnce([{}]),                // update variante
-      beginTransaction: jest.fn(),
-      commit: jest.fn(),
-      rollback: jest.fn(),
-      release: jest.fn()
-    };
-
-    pool.getConnection.mockResolvedValue(mockConnection);
+    // SELECT imagen
+    pool.query
+      .mockResolvedValueOnce([[{ Imagen: null }]])
+      // UPDATE producto
+      .mockResolvedValueOnce([{ affectedRows: 1 }]);
 
     const data = {
       Nombre: 'Nuevo',
@@ -41,7 +32,8 @@ describe('UPDATE PRODUCT', () => {
     const result = await updateProduct(1, data, null);
 
     expect(result).toBe(true);
-    expect(mockConnection.commit).toHaveBeenCalled();
+
+    expect(pool.query).toHaveBeenCalled();
 
   });
 

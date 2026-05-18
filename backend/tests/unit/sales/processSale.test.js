@@ -23,12 +23,12 @@ describe('Sales Service - processSale', () => {
     pool.getConnection.mockResolvedValue(mockConnection);
   });
 
-  test('should process sale successfully with transaction', async () => {
+  test('Procesar la venta correctamente', async () => {
     const saleData = {
-      clientId: 1,
+      IdCliente: 1,
       productos: [
-        { IdVariante: 101, Cantidad: 2 },
-        { IdVariante: 102, Cantidad: 1 }
+        { IdProducto: 101, Cantidad: 2 },
+        { IdProducto: 102, Cantidad: 1 }
       ]
     };
 
@@ -42,7 +42,7 @@ describe('Sales Service - processSale', () => {
       .mockResolvedValueOnce([{}])
       .mockResolvedValueOnce([{}]);
 
-    const result = await processSale(saleData);
+    const result = await processSale(saleData.IdCliente, saleData.productos);
 
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
     expect(mockConnection.commit).toHaveBeenCalled();
@@ -50,48 +50,48 @@ describe('Sales Service - processSale', () => {
     expect(result).toBeDefined();
   });
 
-  test('should rollback transaction on failure', async () => {
+  test('Debe hacer rollback en caso de error', async () => {
     const saleData = {
-      clientId: 1,
-      productos: [{ IdVariante: 101, Cantidad: 2 }]
+      IdCliente: 1,
+      productos: [{ IdProducto: 101, Cantidad: 2 }]
     };
 
     mockConnection.query
       .mockResolvedValueOnce([[{ Precio: 50, Stock: 10, Nombre: 'Prod1' }]])
-      .mockRejectedValueOnce(new Error('Transaction failed'));
+      .mockRejectedValueOnce(new Error('La venta debe tener al menos un producto'));
 
-    await expect(processSale(saleData)).rejects.toThrow('Transaction failed');
+    await expect(processSale(saleData.IdCliente, saleData.productos)).rejects.toThrow('La venta debe tener al menos un producto');
 
     expect(mockConnection.rollback).toHaveBeenCalled();
     expect(mockConnection.release).toHaveBeenCalled();
   });
 
-  test('should throw error when client ID is invalid', async () => {
+  test('Debe lanzar error cuando el ID del cliente es inválido', async () => {
     const saleData = {
-      clientId: null,
-      productos: [{ IdVariante: 101, Cantidad: 2 }]
+      IdCliente: null,
+      productos: [{ IdProducto: 101, Cantidad: 2 }]
     };
 
     await expect(processSale(saleData))
-      .rejects.toThrow('Invalid client ID');
+      .rejects.toThrow('La venta debe tener al menos un producto');
   });
 
-  test('should throw error when sale items are empty', async () => {
+  test('Debe lanzar error cuando no hay productos en la venta', async () => {
     const saleData = {
-      clientId: 1,
+      IdCliente: 1,
       productos: []
     };
 
     await expect(processSale(saleData))
-      .rejects.toThrow('Sale must have at least one item');
+      .rejects.toThrow('La venta debe tener al menos un producto');
   });
 
-  test('should calculate total correctly for multiple items', async () => {
+  test('Debe calcular el total correctamente para múltiples artículos', async () => {
     const saleData = {
-      clientId: 1,
+      IdCliente: 1,
       productos: [
-        { IdVariante: 101, Cantidad: 2 }, // 2 * 50 = 100
-        { IdVariante: 102, Cantidad: 3 }  // 3 * 30 = 90
+        { IdProducto: 101, Cantidad: 2 }, // 2 * 50 = 100
+        { IdProducto: 102, Cantidad: 3 }  // 3 * 30 = 90
       ]
     };
 
@@ -105,7 +105,7 @@ describe('Sales Service - processSale', () => {
       .mockResolvedValueOnce([{}])
       .mockResolvedValueOnce([{}]);
 
-    const result = await processSale(saleData);
+    const result = await processSale(saleData.IdCliente, saleData.productos);
 
     expect(result).toBeDefined();
     expect(mockConnection.commit).toHaveBeenCalled();

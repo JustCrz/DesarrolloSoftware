@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 async function seedUsers() {
   const hash = await bcrypt.hash('123456', 10);
 
+  // Cliente normal
   const [cliente] = await db.query(`
     INSERT INTO cliente 
     (Correo, Contraseña, Direccion, NombreC, role, Telefono)
@@ -16,6 +17,20 @@ async function seedUsers() {
     'Cliente Test',
     'cliente',
     '1234567890'
+  ]);
+
+  // Admin
+  await db.query(`
+    INSERT INTO cliente 
+    (Correo, Contraseña, Direccion, NombreC, role, Telefono)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `, [
+    'admin@tienda.com',
+    hash,
+    'direccion admin',
+    'Admin Test',
+    'admin',
+    '0987654321'
   ]);
 
   return cliente.insertId;

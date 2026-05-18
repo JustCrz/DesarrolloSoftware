@@ -1,6 +1,5 @@
 jest.mock('../../../bd', () => ({
-  query: jest.fn(),
-  getConnection: jest.fn()
+  query: jest.fn()
 }));
 
 const { getProductsProviders } = require('../../../services/products.service');
@@ -14,25 +13,21 @@ describe('GET PRODUCTS WITH PROVIDERS', () => {
 
   test('debe devolver productos con proveedores', async () => {
 
-    pool.query.mockResolvedValue({
-      rows: [
+    pool.query.mockResolvedValue([
+    [
         {
-          IdProducto: 1,
-          Nombre: 'Producto 1',
+          Nombre: 'Producto Test',
           Categoria: 'Ropa',
-          Descripcion: 'Desc',
-          Imagen: null,
-          IdVariante: 1,
-          SKU: 'SKU1',
           Talla: 'M',
           Color: 'Rojo',
           Precio: 100,
           Stock: 10,
+          Imagen: 'test.jpg',
           IdProveedor: 1,
-          NombreProveedor: 'Nike'
+          NombreProveedor: 'Proveedor Test'
         }
       ]
-    });
+    ]);
 
     const result = await getProductsProviders();
 

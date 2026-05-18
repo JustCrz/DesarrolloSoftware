@@ -1,6 +1,5 @@
 jest.mock('../../../bd', () => ({
-  query: jest.fn(),
-  getConnection: jest.fn()
+  query: jest.fn()
 }));
 
 const { createProduct } = require('../../../services/products.service');
@@ -14,30 +13,24 @@ describe('ADD PRODUCT', () => {
 
   test('debe crear producto correctamente', async () => {
 
-    const mockConnection = {
-      query: jest.fn()
-        .mockResolvedValueOnce([{ insertId: 1 }]) // insert producto
-        .mockResolvedValueOnce([{}]),             // insert variante
-      beginTransaction: jest.fn(),
-      commit: jest.fn(),
-      rollback: jest.fn(),
-      release: jest.fn()
-    };
-
-    pool.getConnection.mockResolvedValue(mockConnection);
+    pool.query.mockResolvedValueOnce([{ insertId: 1 }]);
 
     const data = {
       Nombre: 'Producto Test',
       Categoria: 'Ropa',
-      Descripcion: 'Desc',
+      Talla: 'M',
+      Color: 'Rojo',
       Precio: 100,
-      Stock: 10
+      Stock: 10,
+      Calificacion: 4.5,
+      EnPromocion: 1,
+      PrecioOferta: 80,
+      FechaFinPromo: '2024-12-31'
     };
 
     const result = await createProduct(data, null);
 
     expect(result.IdProducto).toBe(1);
-    expect(mockConnection.commit).toHaveBeenCalled();
 
   });
 

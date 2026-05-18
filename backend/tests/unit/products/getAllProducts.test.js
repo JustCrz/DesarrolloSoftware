@@ -7,46 +7,45 @@ const { getAllProducts } = require('../../../services/products.service');
 
 describe('Products Service', () => {
 
-  test('debe agrupar múltiples productos con sus variantes', async () => {
+  test('Debe conseguir a todos los productos disponibles', async () => {
   const mockRows = [
-    // Producto 1 con 2 variantes
     {
       IdProducto: 1,
-      Nombre: 'Playera',
+      Nombre: 'Pantallon',
       Categoria: 'Ropa',
-      Descripcion: 'Algodón',
-      Imagen: 'img1.jpg',
-      IdVariante: 10,
-      SKU: 'SKU1',
+      Imagen: 'img2.jpg',
       Talla: 'M',
       Color: 'Rojo',
       Precio: 100,
-      Stock: 5
+      Stock: 5,
+      Calificacion: 4.0,
+      EnPromocion: false,
+      PrecioOferta: null,
+      FechaFinPromo: null
     },
     {
-      IdProducto: 1,
+      IdProducto: 2,
       Nombre: 'Playera',
       Categoria: 'Ropa',
-      Descripcion: 'Algodón',
       Imagen: 'img1.jpg',
-      IdVariante: 11,
-      SKU: 'SKU2',
       Talla: 'L',
       Color: 'Azul',
       Precio: 110,
-      Stock: 3
+      Stock: 3,
+      Calificacion: 4.5,
+      EnPromocion: true,
+      PrecioOferta: 90,
+      FechaFinPromo: '2024-12-31'
     },
   ];
 
-  pool.query.mockResolvedValue({ rows: mockRows });
+  pool.query.mockResolvedValue([mockRows]);
 
   const result = await getAllProducts();
 
   // Validaciones
-  expect(result.length).toBe(1);
+  expect(result.length).toBe(2);
 
-  // Producto 1
   expect(result[0].IdProducto).toBe(1);
-  expect(result[0].Variantes.length).toBe(2);
   });
 })
