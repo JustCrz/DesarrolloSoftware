@@ -1,4 +1,4 @@
-const API_BASE = 'https://desarrollosoftware.onrender.com/';
+const API_BASE = 'https://desarrollosoftware.onrender.com';
 const stripe = Stripe('pk_test_51T8pDsFOBjDn2DDlWx88AjYqbf1NHYmfgppF5i4eIkJW65P70KQyD2INWT5YQo5FEXFDsOsFGOnBDvggkXp3E4vM00wyBe4HmE');
 /* ---------------- Datos locales ---------------- */
 let productos = [];
