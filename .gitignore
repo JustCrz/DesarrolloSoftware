@@ -1,3 +1,12 @@
-/backend/node_modules/
+# Ignorar node_modules en CUALQUIER lugar del proyecto (raíz, backend, frontend)
+node_modules/
+
+# Ignorar la carpeta de imágenes subidas
 /backend/uploads/
+
+# Ignorar variables de entorno
 .env
+**/.env
+
+# Ignorar los reportes de pruebas de Jest
+coverage/
