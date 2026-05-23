@@ -1,6 +1,9 @@
-/backend/node_modules/
-/backend/uploads/
-/backend/coverage/*
-/backend/.env
-/backend/addAdmin.js
-.env
+/backend/node_modules
+/backend/uploads
+coverage/
+backend/.env
+backend/addAdmin.js
+backend/reporte_complejidad/
+
+reporte_general.md
+/frontend/FRONTEND_REFACTOR_PLAN.md
