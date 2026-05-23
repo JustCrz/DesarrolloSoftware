@@ -1,3 +1,4 @@
+require('dotenv').config();
 const mysql = require('mysql2/promise');
 
 /**
@@ -5,11 +6,11 @@ const mysql = require('mysql2/promise');
  * Se utiliza el puerto estándar 3306 y la base de datos 'tiendaropa'
  */
 const pool = mysql.createPool({
-  host: '127.0.0.1', 
-  user: 'root',
-  password: '', // Asegúrate de que coincida con tu contraseña de XAMPP/MySQL
-  database: 'tiendaropa',
-  port: 3306,
+  host: process.env.DB_HOST, // Asegúrate de que coincida con tu host de XAMPP/MySQL
+  user: process.env.DB_USER, // Asegúrate de que coincida con tu usuario de XAMPP/MySQL
+  password: process.env.DB_PASSWORD, // Asegúrate de que coincida con tu contraseña de XAMPP/MySQL
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0

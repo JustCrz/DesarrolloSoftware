@@ -2,3 +2,12 @@ node_modules/
 backend/node_modules/
 backend/uploads/
 .env
+/backend/node_modules
+/backend/uploads
+coverage/
+backend/.env
+backend/addAdmins.js
+backend/reporte_complejidad/
+
+reporte_general.md
+/frontend/FRONTEND_REFACTOR_PLAN.md

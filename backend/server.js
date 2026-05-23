@@ -6,7 +6,21 @@ const pool = require('./bd'); // Importamos la conexión a la BD para las notifi
 const app = express();
 
 // --- MIDDLEWARES ---
-app.use(cors()); // Permite la comunicación con el frontend (puerto 5500)
+const allowedOrigins = [
+  "http://localhost:5500",
+  "https://marjoriestore.vercel.app"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("No permitido por CORS"));
+    }
+  },
+  credentials: true
+})); // Permite la comunicación con el frontend (puerto 5500)
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
