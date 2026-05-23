@@ -4,7 +4,7 @@ const stripeController = require('../controllers/stripeController');
 
 /**
  * RUTA DEL WEBHOOK
- * Nota: El middleware express.raw se aplica en server.js para esta ruta específica
+
  */
 router.post('/webhook', stripeController.handleStripeWebhook);
 
