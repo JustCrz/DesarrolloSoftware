@@ -30,7 +30,6 @@ function hideAll() {
     const element = el(id);
     if (element) element.classList.add('hidden');
   });
-  // Limpia sub-secciones del admin
   document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
 }
 function showLanding(){ hideAll(); show('landing'); }
@@ -151,9 +150,31 @@ async function cambiarEstadoPedido(idPedido, estadoActual) {
     }
 }
 /* ---------------- Autenticación ---------------- */
+window.addEventListener('DOMContentLoaded', () => {
+  const savedUser = localStorage.getItem('user');
+  if (savedUser) {
+    try {
+      loggedUser = JSON.parse(savedUser);
+      console.log("Sesión recuperada:", loggedUser);
+      afterLogin(); // Entra directo si ya estaba logueado
+    } catch (e) {
+      localStorage.removeItem('user');
+    }
+  } else {
+    showLanding(); // Si no hay nadie, muestra el inicio
+  }
+});
+
+/* --- 2. FUNCIÓN LOGIN CORREGIDA --- */
 async function login() {
   const correo = el('loginUser').value.trim().toLowerCase();
   const contraseña = el('loginPass').value;
+  
+  if (!correo || !contraseña) {
+    el('loginMsg').textContent = 'Por favor, llena todos los campos';
+    return;
+  }
+
   try {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
@@ -166,6 +187,10 @@ async function login() {
 
     if (data.ok) {
       loggedUser = data.user; 
+      
+      // GUARDAR EN EL NAVEGADOR: Esto evita que te saque al registrar proveedores
+      localStorage.setItem('user', JSON.stringify(data.user)); 
+      
       afterLogin();
     } else {
       el('loginMsg').textContent = data.message;
@@ -181,8 +206,6 @@ function afterLogin() {
   hideAll(); 
   el('authButtons').classList.add('hidden'); 
   el('btnLogout').classList.remove('hidden');
-
-  // --- NUEVA LÍNEA: Mostrar la campana para todos los que inicien sesión ---
   el('notifContainer').classList.remove('hidden');
   cargarNotificaciones(); // Llama a la función que busca mensajes en la BD
 
@@ -199,19 +222,19 @@ function afterLogin() {
   }
 }
 
-function logout(){
-  localStorage.removeItem('user');
+function logout() {
+  localStorage.removeItem('user'); // Borramos la sesión del disco
   loggedUser = null;
-  el('btnCart').classList.add('hidden');
-  el('btnLogout').classList.add('hidden');
-  el('btnHistorial').classList.add('hidden');
   
-  // --- NUEVA LÍNEA: Ocultar la campana al salir ---
-  el('notifContainer').classList.add('hidden');
-
-  el('authButtons').classList.remove('hidden');
+  // Escondemos botones y volvemos al inicio
+  el('btnCart')?.classList.add('hidden');
+  el('btnLogout')?.classList.add('hidden');
+  el('btnHistorial')?.classList.add('hidden');
+  el('notifContainer')?.classList.add('hidden');
+  el('authButtons')?.classList.remove('hidden');
+  
   hideAll();
-  show('landing');
+  showLanding();
 }
 
 /* ---------------- Registro ---------------- */
@@ -375,40 +398,40 @@ async function handlePayment() {
   if (carrito.length === 0) return alert('El carrito está vacío');
 
   try {
-    // Limpiamos los datos para Stripe
     const itemsProcesados = carrito.map(item => ({
         IdProducto: item.IdProducto,
         Nombre: item.Nombre,
-        // Usar precio de oferta si está activo
         Precio: item.EnPromocion === 1 ? item.PrecioOferta : item.Precio, 
         Cantidad: item.Cantidad
     }));
 
+    const bodyEnvio = {
+        items: itemsProcesados,
+        idUsuario: loggedUser ? loggedUser.IdCliente : null,
+        latitud: loggedUser?.latitud || null,
+        longitud: loggedUser?.longitud || null
+    };
+
     const response = await fetch(`${API_BASE}/api/stripe/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            items: itemsProcesados,
-            idUsuario: loggedUser ? loggedUser.IdCliente : null
-        }) 
+        body: JSON.stringify(bodyEnvio) 
     });
 
     const session = await response.json();
+    
     if (session.id) {
-        await stripe.redirectToCheckout({ sessionId: session.id });
+        const result = await stripe.redirectToCheckout({ sessionId: session.id });
+        if (result.error) {
+            alert(result.error.message);
+        }
     } else {
-        throw new Error(session.error || "Error al crear sesión");
+      throw new Error(session.error || "Error al crear sesión");
     }
   } catch (error) {
     console.error("Error Stripe:", error);
-    alert("Hubo un error con el pago.");
+    alert("Hubo un error al conectar con la pasarela de pagos.");
   }
-}
-
-function limpiarCarrito() {
-    carrito = [];
-    renderCarrito(); 
-    showToast("¡Pago procesado con éxito!");
 }
 
 /* ---------------- Proceso de Finalización y Ubicación ---------------- */
@@ -418,21 +441,24 @@ async function finalizarCompra() {
     return;
   }
 
+  if (!loggedUser) {
+    alert("Debes iniciar sesión para finalizar la compra");
+    showLogin();
+    return;
+  }
+
   try {
     showToast("Obteniendo tu ubicación para la entrega...");
-    
-    // Intentamos obtener las coordenadas del cliente
     const coords = await obtenerUbicacionCliente();
     
-    // Coordenadas temporalmente en el objeto del usuario o una variable global
-    // para que el backend las reciba al crear la sesión de Stripe
     loggedUser.latitud = coords.lat;
     loggedUser.longitud = coords.lng;
+
     handlePayment();
 
   } catch (error) {
     console.warn("No se obtuvo la ubicación:", error);
-    if(confirm("No pudimos obtener tu ubicación exacta. ¿Quieres continuar con la dirección de tu perfil?")) {
+    if(confirm("No pudimos obtener tu ubicación GPS exacta. ¿Quieres continuar con la dirección de tu perfil?")) {
       handlePayment();
     }
   }
@@ -447,9 +473,6 @@ async function renderEntregasLogistica() {
     const res = await fetch(`${API_BASE}/api/sales`);
     const data = await res.json();
     const ventas = data.sales || [];
-    
-    // CAMBIO CLAVE: Quitamos el filtro estricto de latitud/longitud
-    // Ahora mostrará TODOS los pedidos que lleguen del servidor
     const todosLosPedidos = ventas; 
 
     if (todosLosPedidos.length === 0) {
@@ -459,8 +482,6 @@ async function renderEntregasLogistica() {
 
     container.innerHTML = todosLosPedidos.map(p => {
       const nombreMostrar = p.NombreC || p.cliente || p.Nombre || "Cliente no identificado";
-      
-      // Validamos si tiene GPS para mostrar o no el botón de Google Maps
       const tieneGPS = p.latitud && p.longitud;
       const urlGoogleMaps = tieneGPS ? `https://www.google.com/maps?q=${p.latitud},${p.longitud}` : '#';
 
@@ -503,7 +524,7 @@ async function renderEntregasLogistica() {
 
   } catch (err) {
     console.error("Error:", err);
-    container.innerHTML = '<p style="padding:15px; color: #ff4d4d;">❌ Error de conexión.</p>';
+    container.innerHTML = '<p style="padding:15px; color: #ff4d4d;"> Error de conexión.</p>';
   }
 }
 
@@ -751,7 +772,7 @@ async function deleteProducto(id) {
     const res = await fetch(`${API_BASE}/api/products/${id}`, { method: 'DELETE' });
     const data = await res.json();
     if (res.ok && data.ok) { 
-      alert('✅ Producto eliminado correctamente.');
+      alert(' Producto eliminado correctamente.');
       
       await cargarProductos(); // Refresca la lista global
       showAdminPanel();
@@ -764,7 +785,7 @@ async function deleteProducto(id) {
       alert(msgError);
     }
   } catch (err) {
-    alert('❌ Error de conexión: El servidor no responde.');
+    alert(' Error de conexión: El servidor no responde.');
     console.error(err);
   }
 }
@@ -798,15 +819,15 @@ if (formProveedor) {
       const data = await res.json();
 
       if (res.ok && data.ok) {
-        alert('✅ Proveedor guardado correctamente');
+        alert(' Proveedor guardado correctamente');
         formProveedor.reset();
         await renderProveedores();
       } else {
-        alert('❌ Error: ' + (data.message || 'Error al guardar'));
+        alert(' Error: ' + (data.message || 'Error al guardar'));
       }
     } catch (err) {
       console.error("Error en POST proveedores:", err);
-      alert('⚠️ Error de conexión: Revisa la terminal de Node.js');
+      alert(' Error de conexión');
     }
   });
 }
@@ -846,7 +867,7 @@ async function renderProveedores() {
       return `
         <div class="card-proveedor" style="background: #111; border: 1px solid #333; border-radius: 12px; padding: 15px; position: relative; display: flex; flex-direction: column; gap: 10px;">
             <div style="width: 100%; height: 100px; border-radius: 8px; background: #050505; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                <img src="${urlFinal}" alt="Logo" style="max-width: 90%; max-height: 90%; object-fit: contain;" onerror="this.src='https://via.placeholder.com/100/1a1a1a/d4a373?text=🤝'">
+                <img src="${urlFinal}" alt="Logo" style="max-width: 90%; max-height: 90%; object-fit: contain;" onerror="this.src='https://via.placeholder.com/100/1a1a1a/d4a373?text='">
             </div>
             <div style="color: #fff;">
                 <h4 style="margin: 0 0 5px 0; color: #d4a373;">${p.Nombre}</h4>
@@ -939,7 +960,7 @@ async function renderEstadisticas() {
         `;
       }
 
-      //  Diseño compacto y profesional para el Admin
+      //  Diseño para el Admin
       if (contAdmin) {
         contAdmin.innerHTML = `
           <div style="display:flex; align-items:center; gap:20px; width:100%;">

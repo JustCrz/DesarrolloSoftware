@@ -10,8 +10,9 @@ app.use(cors()); // Permite la comunicación con el frontend (puerto 5500)
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
-// Carpeta de imágenes (Servir archivos estáticos)
+
 app.use('/uploads', express.static(path.join(__dirname, 'Uploads')));
+app.use(express.static(__dirname));
 
 // --- IMPORTACIÓN DE RUTAS ---
 const authRoutes = require('./routes/auth');      

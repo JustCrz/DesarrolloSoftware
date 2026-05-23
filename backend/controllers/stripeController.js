@@ -1,12 +1,9 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const salesController = require('./sales.controller'); 
 
-/**
- * 1. Crear sesión de pago detectando ofertas
- */
 async function createCheckoutSession(req, res) {
     try {
-        const { items, idUsuario } = req.body;
+        const { items, idUsuario, latitud, longitud } = req.body;
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -20,7 +17,6 @@ async function createCheckoutSession(req, res) {
                         currency: 'mxn',
                         product_data: { 
                             name: item.Nombre,
-                            description: item.EnPromocion == 1 ? 'Precio Especial de Oferta' : ''
                         },
                         unit_amount: Math.round(precioFinal * 100), 
                     },
@@ -29,56 +25,58 @@ async function createCheckoutSession(req, res) {
             }),
             mode: 'payment',
             metadata: {
-                items: JSON.stringify(items),
-                idUsuario: idUsuario
+                items: JSON.stringify(items.map(i => ({
+                    IdProducto: i.IdProducto,
+                    Cantidad: i.Cantidad,
+                    Precio: i.PrecioOferta > 0 && i.EnPromocion == 1 ? i.PrecioOferta : i.Precio
+                }))),
+                idUsuario: idUsuario,
+                latitud: latitud || null,
+                longitud: longitud || null
             },
+           
             success_url: 'http://localhost:3000/success.html',
-            cancel_url: 'http://localhost:3000/cancel.html',
+            cancel_url: 'http://localhost:3000/index.html', 
         });
 
         res.json({ id: session.id });
     } catch (error) {
-        console.error('❌ Error en Stripe Session:', error);
+        console.error(' Error en Stripe Session:', error);
         res.status(500).json({ error: error.message });
     }
 }
 
-/**
- * 2. Webhook para recibir notificación de éxito
- */
 async function handleStripeWebhook(req, res) {
     const sig = req.headers['stripe-signature'];
     let event;
 
     try {
+        
         event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
     } catch (err) {
-        console.error('⚠️ Webhook Signature Error:', err.message);
+        console.error(` Webhook Error: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
+
 
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
         
-        if (!session.metadata || !session.metadata.items) {
-            return res.json({ received: true });
-        }
-
+   
         const items = JSON.parse(session.metadata.items);
         const idUsuario = session.metadata.idUsuario;
+        const latitud = session.metadata.latitud;
+        const longitud = session.metadata.longitud;
 
         try {
-            await salesController.processSaleInternally(idUsuario, items);
+            await salesController.processSaleInternally(idUsuario, items, latitud, longitud);
+            console.log(` Venta procesada para el usuario ${idUsuario}`);
         } catch (error) {
-            console.error('❌ Error crítico al registrar la venta:', error);
-            return res.status(500).send('Error interno al registrar la venta');
+            console.error(' Error al registrar venta en base de datos:', error);
         }
     }
+
     res.json({ received: true });
 }
 
-// EXPORTACIÓN ÚNICA (Esto evita el ReferenceError)
-module.exports = {
-    createCheckoutSession,
-    handleStripeWebhook
-};
+module.exports = { createCheckoutSession, handleStripeWebhook };
