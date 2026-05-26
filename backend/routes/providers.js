@@ -3,6 +3,7 @@ const router = express.Router();
 const providersController = require('../controllers/providers.controller');
 const multer = require('multer');
 const path = require('path');
+const { authenticate, requireRole } = require('../middleware/auth');
 
 // 1. Configuración de almacenamiento para los Logos
 const storage = multer.diskStorage({
@@ -20,16 +21,16 @@ const upload = multer({ storage });
 // --- RUTAS ---
 
 // Obtener todos
-router.get('/', providersController.getProviders);
+router.get('/', authenticate, requireRole('admin'), providersController.getProviders);
 
 // Registrar nuevo (Aquí añadimos el middleware para procesar el 'Logo')
 // El nombre 'Logo' debe coincidir con el formData.append('Logo', ...) del frontend
-router.post('/', upload.single('Logo'), providersController.addProvider);
+router.post('/', authenticate, requireRole('admin'), upload.single('Logo'), providersController.addProvider);
 
 // Actualizar datos (También permitimos actualizar el logo si es necesario)
-router.put('/:id', upload.single('Logo'), providersController.updateProvider);
+router.put('/:id', authenticate, requireRole('admin'), upload.single('Logo'), providersController.updateProvider);
 
 // Eliminar
-router.delete('/:id', providersController.deleteProvider);
+router.delete('/:id', authenticate, requireRole('admin'), providersController.deleteProvider);
 
 module.exports = router;

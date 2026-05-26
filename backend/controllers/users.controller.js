@@ -38,39 +38,14 @@ async function registerUser(req, res) {
     const hashedPassword = await bcrypt.hash(passwordRaw, saltRounds);
 
     const [result] = await pool.query(
-      'INSERT INTO cliente (NombreC, Correo, Contraseña, Telefono, Direccion) VALUES (?, ?, ?, ?, ?)',
-      [NombreC, Correo, hashedPassword, Telefono || null, Direccion || null]
+      'INSERT INTO cliente (NombreC, Correo, Contraseña, Telefono, Direccion, role) VALUES (?, ?, ?, ?, ?, ?)',
+      [NombreC, Correo, hashedPassword, Telefono || null, Direccion || null, 'cliente']
     );
 
     res.status(201).json({ ok: true, message: 'Usuario registrado exitosamente', id: result.insertId });
   } catch (err) {
     console.error('Error en registro:', err);
     res.status(500).json({ ok: false, message: 'Error interno del servidor' });
-  }
-}
-
-/**
- * Iniciar sesión
- */
-async function loginUser(req, res) {
-  const { Correo, Contraseña } = req.body;
-  try {
-    const [results] = await pool.query('SELECT * FROM cliente WHERE Correo = ?', [Correo]);
-    if (results.length === 0) {
-      return res.status(401).json({ ok: false, message: 'Usuario no encontrado' });
-    }
-
-    const user = results[0];
-    const match = await bcrypt.compare(Contraseña, user.Contraseña);
-    if (!match) {
-      return res.status(401).json({ ok: false, message: 'Contraseña incorrecta' });
-    }
-
-    delete user.Contraseña; // Seguridad: no enviar hash al frontend
-    res.json({ ok: true, user });
-  } catch (err) {
-    console.error("Error en login:", err);
-    res.status(500).json({ ok: false, message: 'Error al iniciar sesión' });
   }
 }
 
@@ -90,10 +65,17 @@ async function deleteUser(req, res) {
  * Actualizar perfil de un cliente
  */
 async function updateUser(req, res) {
-  const { id, nombre, telefono, direccion } = req.body;
+  const id = req.body.id || req.body.idCliente || req.body.IdCliente;
+  const nombre = req.body.nombre || req.body.NombreC;
+  const telefono = req.body.telefono || req.body.Telefono;
+  const direccion = req.body.direccion || req.body.Direccion;
 
   if (!id) {
     return res.status(400).json({ ok: false, message: 'ID de usuario es requerido' });
+  }
+
+  if (req.user.role !== 'admin' && Number(req.user.id) !== Number(id)) {
+    return res.status(403).json({ ok: false, message: 'Acceso denegado' });
   }
 
   try {
@@ -102,7 +84,7 @@ async function updateUser(req, res) {
       SET NombreC = ?, Telefono = ?, Direccion = ? 
       WHERE IdCliente = ?
     `;
-    
+
     const [result] = await pool.query(query, [nombre, telefono, direccion, id]);
 
     if (result.affectedRows === 0) {
@@ -118,9 +100,8 @@ async function updateUser(req, res) {
 
 /// Borra todos los exports.xxx y cámbialos por un solo objeto:
 module.exports = {
-    getAllUsers,
-    registerUser,
-    loginUser,
-    deleteUser,
-    updateUser
+  getAllUsers,
+  registerUser,
+  deleteUser,
+  updateUser
 };

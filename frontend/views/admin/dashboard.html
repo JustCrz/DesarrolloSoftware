@@ -1,0 +1,22 @@
+<section id="adminPanel" class="card">
+  <div class="admin-header-flex" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2> Panel Administrador</h2>
+  </div>
+  
+  <div class="admin-inner">
+    <aside class="admin-nav">
+      <div class="nav-brand-admin">Menú Gestión</div>
+      <button onclick="showAdminSection('inventario')"> Gestionar Inventario</button>
+      <button onclick="showAdminSection('proveedores')"> Control Proveedores</button>
+      <button onclick="showAdminSection('catalogo')"> Control Catálogo</button>
+      <button onclick="showAdminSection('estadisticas')"> Reportes y Estadísticas</button>
+      <button onclick="showAdminSection('pedidos')"> Gestionar Entregas</button>
+      <button onclick="showAdminSection('pagos')"> Gestionar Pagos</button>
+      <button onclick="showLanding()" class="btn-exit-admin" style="background: #331a1a; color: #ff4d4d; margin-top: 20px;">Salir del Panel</button>
+    </aside>
+
+    <div class="admin-content" id="adminContentContainer">
+      <!-- Las subvistas específicas del administrador se inyectarán dinámicamente aquí -->
+    </div> 
+  </div> 
+</section> 

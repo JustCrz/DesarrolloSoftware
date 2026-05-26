@@ -1,4 +1,5 @@
-const API_BASE = 'https://desarrollosoftware.onrender.com';
+// const API_BASE = 'https://desarrollosoftware.onrender.com';
+const API_BASE = 'http://localhost:3000';
 const stripe = Stripe('pk_test_51T8pDsFOBjDn2DDlWx88AjYqbf1NHYmfgppF5i4eIkJW65P70KQyD2INWT5YQo5FEXFDsOsFGOnBDvggkXp3E4vM00wyBe4HmE');
 /* ---------------- Datos locales ---------------- */
 let productos = [];
@@ -6,14 +7,14 @@ let proveedores = [];
 let ventas = [];
 let carrito = [];
 let loggedUser = null;
-let mapaAdmin = null; 
+let mapaAdmin = null;
 let marcadorAdmin = null;
 
 const estadosLogistica = {
-    "1": "Pagado",
-    "2": "Preparando",
-    "3": "En Camino",
-    "4": "Entregado"
+  "1": "Pagado",
+  "2": "Preparando",
+  "3": "En Camino",
+  "4": "Entregado"
 };
 /* ---------------- Utilidades DOM ---------------- */
 const el = id => document.getElementById(id);
@@ -23,7 +24,7 @@ const hide = id => el(id)?.classList.add('hidden');
 /* ---------------- Navegación ---------------- */
 function hideAll() {
   const sections = [
-    'landing', 'login', 'register', 'catalog', 'productDetail', 
+    'landing', 'login', 'register', 'catalog', 'productDetail',
     'cart', 'adminPanel', 'promociones', 'userHistory', 'modalProducto', 'adminOrders', 'userProfile'
   ];
   sections.forEach(id => {
@@ -32,35 +33,35 @@ function hideAll() {
   });
   document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
 }
-function showLanding(){ hideAll(); show('landing'); }
-function showLogin(){ hideAll(); show('login'); }
-function showRegister(){ hideAll(); show('register'); }
-function showCatalog(){ hideAll(); renderCatalog(); show('catalog'); }
-function showAdminPanel(){ hideAll(); show('adminPanel'); showAdminSection('inventario'); }
+function showLanding() { hideAll(); show('landing'); }
+function showLogin() { hideAll(); show('login'); }
+function showRegister() { hideAll(); show('register'); }
+function showCatalog() { hideAll(); renderCatalog(); show('catalog'); }
+function showAdminPanel() { hideAll(); show('adminPanel'); showAdminSection('inventario'); }
 
 function showAdminSection(section) {
   document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
 
   switch (section) {
-    case 'inventario': 
-      show('adminInventario'); 
-      renderAdminList(); 
+    case 'inventario':
+      show('adminInventario');
+      renderAdminList();
       break;
-    case 'proveedores': 
-      show('adminProveedores'); 
-      renderProveedores(); 
+    case 'proveedores':
+      show('adminProveedores');
+      renderProveedores();
       break;
-    case 'catalogo': 
-      show('adminCatalogo'); 
-      renderCatalogAdmin(); 
+    case 'catalogo':
+      show('adminCatalogo');
+      renderCatalogAdmin();
       break;
-    case 'estadisticas': 
-      show('adminEstadisticas'); 
-      renderEstadisticas(); 
+    case 'estadisticas':
+      show('adminEstadisticas');
+      renderEstadisticas();
       break;
-    case 'pedidos': 
-      show('adminOrders'); 
-      renderEntregasLogistica(); 
+    case 'pedidos':
+      show('adminOrders');
+      renderEntregasLogistica();
       setTimeout(() => {
         if (typeof mapaAdmin !== 'undefined' && mapaAdmin) {
           mapaAdmin.invalidateSize();
@@ -69,7 +70,7 @@ function showAdminSection(section) {
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaAdmin);
         }
       }, 300);
-      break; 
+      break;
     case 'pagos':
       show('adminPagos');
       break;
@@ -80,23 +81,23 @@ function showAdminSection(section) {
 
 // Función para mostrar la lista de todos los pedidos (Solo Admin)
 async function showAdminOrders() {
-    hideAll();
-    show('adminOrders'); 
-    const container = el('adminOrdersList');
-    if(!container) return;
-    
-    container.innerHTML = '<p style="text-align:center;">Cargando pedidos de la tienda...</p>';
+  hideAll();
+  show('adminOrders');
+  const container = el('adminOrdersList');
+  if (!container) return;
 
-    try {
-        const res = await fetch(`${API_BASE}/api/sales`);
-        const ventas = await res.json();
+  container.innerHTML = '<p style="text-align:center;">Cargando pedidos de la tienda...</p>';
 
-        if (ventas.length === 0) {
-            container.innerHTML = '<p style="text-align:center;">No hay pedidos registrados aún.</p>';
-            return;
-        }
+  try {
+    const res = await fetch(`${API_BASE}/api/sales`);
+    const ventas = await res.json();
 
-        container.innerHTML = ventas.map(p => `
+    if (ventas.length === 0) {
+      container.innerHTML = '<p style="text-align:center;">No hay pedidos registrados aún.</p>';
+      return;
+    }
+
+    container.innerHTML = ventas.map(p => `
             <div class="pedido-card" style="margin-bottom: 15px; padding: 20px; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid ${p.Estado === 'Entregado' ? '#2e7d32' : '#d4a373'};">
                 <div>
                     <strong style="font-size: 1.1rem;">Orden #MS-${p.IdPedido}</strong> 
@@ -111,43 +112,43 @@ async function showAdminOrders() {
                 </div>
             </div>
         `).join('');
-    } catch (err) {
-        console.error("Error al cargar pedidos admin:", err);
-        container.innerHTML = '<p>Error al conectar con el servidor.</p>';
-    }
+  } catch (err) {
+    console.error("Error al cargar pedidos admin:", err);
+    container.innerHTML = '<p>Error al conectar con el servidor.</p>';
+  }
 }
 
 // Función para actualizar el estado en la BD
 async function cambiarEstadoPedido(idPedido, estadoActual) {
-    const estados = ['Pagado', 'Preparando', 'En Camino', 'Entregado'];
-    const siguienteIndice = estados.indexOf(estadoActual) + 1;
+  const estados = ['Pagado', 'Preparando', 'En Camino', 'Entregado'];
+  const siguienteIndice = estados.indexOf(estadoActual) + 1;
 
-    if (siguienteIndice >= estados.length) {
-        alert("El pedido ya ha sido entregado completamente.");
-        return;
+  if (siguienteIndice >= estados.length) {
+    alert("El pedido ya ha sido entregado completamente.");
+    return;
+  }
+
+  const nuevoEstado = estados[siguienteIndice];
+
+  if (confirm(`¿Quieres mover el pedido #MS-${idPedido} a "${nuevoEstado}"?`)) {
+    try {
+      const res = await fetch(`${API_BASE}/api/sales/update-status/${idPedido}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nuevoEstado })
+      });
+
+      if (res.ok) {
+        showToast(`Pedido #${idPedido} actualizado a ${nuevoEstado}`);
+        showAdminOrders();
+      } else {
+        alert("No se pudo actualizar el estado en el servidor.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión.");
     }
-
-    const nuevoEstado = estados[siguienteIndice];
-
-    if (confirm(`¿Quieres mover el pedido #MS-${idPedido} a "${nuevoEstado}"?`)) {
-        try {
-            const res = await fetch(`${API_BASE}/api/sales/update-status/${idPedido}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nuevoEstado })
-            });
-
-            if (res.ok) {
-                showToast(`Pedido #${idPedido} actualizado a ${nuevoEstado}`);
-                showAdminOrders(); 
-            } else {
-                alert("No se pudo actualizar el estado en el servidor.");
-            }
-        } catch (err) {
-            console.error(err);
-            alert("Error de conexión.");
-        }
-    }
+  }
 }
 /* ---------------- Autenticación ---------------- */
 window.addEventListener('DOMContentLoaded', () => {
@@ -169,7 +170,7 @@ window.addEventListener('DOMContentLoaded', () => {
 async function login() {
   const correo = el('loginUser').value.trim().toLowerCase();
   const contraseña = el('loginPass').value;
-  
+
   if (!correo || !contraseña) {
     el('loginMsg').textContent = 'Por favor, llena todos los campos';
     return;
@@ -179,18 +180,18 @@ async function login() {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo, contraseña }) 
+      body: JSON.stringify({ correo, contraseña })
     });
-    
+
     const data = await res.json();
-    console.log("Respuesta login:", data); 
+    console.log("Respuesta login:", data);
 
     if (data.ok) {
-      loggedUser = data.user; 
-      
+      loggedUser = data.user;
+
       // GUARDAR EN EL NAVEGADOR: Esto evita que te saque al registrar proveedores
-      localStorage.setItem('user', JSON.stringify(data.user)); 
-      
+      localStorage.setItem('user', JSON.stringify(data.user));
+
       afterLogin();
     } else {
       el('loginMsg').textContent = data.message;
@@ -203,36 +204,36 @@ async function login() {
 
 function afterLogin() {
   el('loginMsg').textContent = '';
-  hideAll(); 
-  el('authButtons').classList.add('hidden'); 
+  hideAll();
+  el('authButtons').classList.add('hidden');
   el('btnLogout').classList.remove('hidden');
   el('notifContainer').classList.remove('hidden');
   cargarNotificaciones(); // Llama a la función que busca mensajes en la BD
 
   if (loggedUser.role === 'admin') {
-    el('btnCart').classList.add('hidden');     
-    el('btnHistorial').classList.add('hidden'); 
-    el('btnPerfil').classList.add('hidden'); 
-    show('adminPanel');                        
+    el('btnCart').classList.add('hidden');
+    el('btnHistorial').classList.add('hidden');
+    el('btnPerfil').classList.add('hidden');
+    show('adminPanel');
   } else {
-    el('btnCart').classList.remove('hidden');   
+    el('btnCart').classList.remove('hidden');
     el('btnHistorial').classList.remove('hidden');
-    el('btnPerfil').classList.remove('hidden'); 
-    showCatalog(); 
+    el('btnPerfil').classList.remove('hidden');
+    showCatalog();
   }
 }
 
 function logout() {
   localStorage.removeItem('user'); // Borramos la sesión del disco
   loggedUser = null;
-  
+
   // Escondemos botones y volvemos al inicio
   el('btnCart')?.classList.add('hidden');
   el('btnLogout')?.classList.add('hidden');
   el('btnHistorial')?.classList.add('hidden');
   el('notifContainer')?.classList.add('hidden');
   el('authButtons')?.classList.remove('hidden');
-  
+
   hideAll();
   showLanding();
 }
@@ -243,7 +244,7 @@ async function register() {
   const Correo = el('regEmail').value.trim();
   const Contraseña = el('regPass').value;
 
-  if(!NombreC || !Correo || Contraseña.length < 6) {
+  if (!NombreC || !Correo || Contraseña.length < 6) {
     el('regMsg').textContent = 'Datos incompletos o contraseña muy corta';
     el('regMsg').style.color = 'orange';
     return;
@@ -251,7 +252,7 @@ async function register() {
 
   try {
 
-    const res = await fetch(`${API_BASE}/api/users/register`, { 
+    const res = await fetch(`${API_BASE}/api/users/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -264,7 +265,7 @@ async function register() {
     });
 
     const data = await res.json();
-    console.log("Respuesta servidor registro:", data); 
+    console.log("Respuesta servidor registro:", data);
 
     if (data.ok) {
       el('regMsg').style.color = 'green';
@@ -280,17 +281,17 @@ async function register() {
 }
 
 function renderCatalog() {
-  const container = el('catalogGrid'); 
+  const container = el('catalogGrid');
   if (!container) return;
   container.innerHTML = '';
 
   productos.forEach(p => {
     const card = document.createElement('article');
     card.className = 'producto';
-    
+
     // MS-07: Lógica de visualización de precios
     const tienePromo = p.EnPromocion === 1 && p.PrecioOferta > 0;
-    const precioHTML = tienePromo 
+    const precioHTML = tienePromo
       ? `<p class="precio">
           <span class="oferta" style="color:red; font-weight:bold;">$${p.PrecioOferta}</span> 
           <span class="original-tachado" style="text-decoration:line-through; font-size:0.8em; color:#888;">$${p.Precio}</span>
@@ -312,34 +313,34 @@ function renderCatalog() {
   });
 }
 /* ---------------- Carrito ---------------- */
-function mostrarCarrito(){ hideAll(); show('cart'); renderCarrito(); }
+function mostrarCarrito() { hideAll(); show('cart'); renderCarrito(); }
 
 function renderCarrito() {
-    const container = document.getElementById('cartContents');
-    const totalDisplay = document.getElementById('totalDisplay');
-    const btnPagar = document.getElementById('btnPagar');
-    
-    container.innerHTML = ''; 
-    
-    if (carrito.length === 0) {
-        container.innerHTML = '<p style="text-align:center; padding:20px;">Tu carrito está vacío.</p>';
-        if(totalDisplay) totalDisplay.innerText = '$0.00';
-        if(btnPagar) btnPagar.classList.add('hidden');
-        return;
-    }
-    
-    let total = 0;
-    
-    carrito.forEach((item, index) => {
-        const subtotal = item.Precio * item.Cantidad;
-        total += subtotal;
-        const nombreImg = item.Imagen ? item.Imagen.replace(/^(\/)?uploads\//, '') : '';
-        const urlImg = `${API_BASE}/uploads/${nombreImg}`;
-        
-        const div = document.createElement('div');
-        div.className = 'cart-item-container';
-        
-        div.innerHTML = `
+  const container = document.getElementById('cartContents');
+  const totalDisplay = document.getElementById('totalDisplay');
+  const btnPagar = document.getElementById('btnPagar');
+
+  container.innerHTML = '';
+
+  if (carrito.length === 0) {
+    container.innerHTML = '<p style="text-align:center; padding:20px;">Tu carrito está vacío.</p>';
+    if (totalDisplay) totalDisplay.innerText = '$0.00';
+    if (btnPagar) btnPagar.classList.add('hidden');
+    return;
+  }
+
+  let total = 0;
+
+  carrito.forEach((item, index) => {
+    const subtotal = item.Precio * item.Cantidad;
+    total += subtotal;
+    const nombreImg = item.Imagen ? item.Imagen.replace(/^(\/)?uploads\//, '') : '';
+    const urlImg = `${API_BASE}/uploads/${nombreImg}`;
+
+    const div = document.createElement('div');
+    div.className = 'cart-item-container';
+
+    div.innerHTML = `
             <div class="producto-item" style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
                 <img src="${urlImg}" alt="${item.Nombre}" 
                      style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;"
@@ -358,38 +359,38 @@ function renderCarrito() {
             </div>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
         `;
-        container.appendChild(div);
-    });
-    
-    if(totalDisplay) totalDisplay.innerText = `$${total.toFixed(2)}`;
-    if(btnPagar) btnPagar.classList.remove('hidden');
+    container.appendChild(div);
+  });
+
+  if (totalDisplay) totalDisplay.innerText = `$${total.toFixed(2)}`;
+  if (btnPagar) btnPagar.classList.remove('hidden');
 }
 
-function addToCart(id){
-  if(!loggedUser){ alert('Debes iniciar sesión'); return; }
-  const p=productos.find(x=>x.IdProducto===id);
-  const qty=parseInt(el(`cantidad_${id}`)?.value || 1);
-  if(p.Stock<qty){ alert('Stock insuficiente'); return; }
-  const item=carrito.find(i=>i.IdProducto===id);
-  if(item) item.Cantidad+=qty; else carrito.push({...p,Cantidad:qty});
-  p.Stock-=qty; renderCatalog(); renderCarrito();
+function addToCart(id) {
+  if (!loggedUser) { alert('Debes iniciar sesión'); return; }
+  const p = productos.find(x => x.IdProducto === id);
+  const qty = parseInt(el(`cantidad_${id}`)?.value || 1);
+  if (p.Stock < qty) { alert('Stock insuficiente'); return; }
+  const item = carrito.find(i => i.IdProducto === id);
+  if (item) item.Cantidad += qty; else carrito.push({ ...p, Cantidad: qty });
+  p.Stock -= qty; renderCatalog(); renderCarrito();
   showToast(`${p.Nombre} agregado (${qty})`);
 }
 
-function updateCantidad(index,nuevaCantidad){
-  nuevaCantidad=parseInt(nuevaCantidad); if(isNaN(nuevaCantidad)||nuevaCantidad<1) return;
-  const item=carrito[index];
-  const producto=productos.find(p=>p.IdProducto===item.IdProducto);
-  const diff=nuevaCantidad-item.Cantidad;
-  if(diff>0 && producto.Stock<diff){ alert('No hay suficiente stock'); renderCarrito(); return; }
-  item.Cantidad=nuevaCantidad; producto.Stock-=diff; renderCatalog(); renderCarrito();
+function updateCantidad(index, nuevaCantidad) {
+  nuevaCantidad = parseInt(nuevaCantidad); if (isNaN(nuevaCantidad) || nuevaCantidad < 1) return;
+  const item = carrito[index];
+  const producto = productos.find(p => p.IdProducto === item.IdProducto);
+  const diff = nuevaCantidad - item.Cantidad;
+  if (diff > 0 && producto.Stock < diff) { alert('No hay suficiente stock'); renderCarrito(); return; }
+  item.Cantidad = nuevaCantidad; producto.Stock -= diff; renderCatalog(); renderCarrito();
 }
 
-function eliminarDelCarrito(index){
-  const item=carrito[index];
-  const producto=productos.find(p=>p.IdProducto===item.IdProducto);
-  if(producto) producto.Stock+=item.Cantidad;
-  carrito.splice(index,1); renderCatalog(); renderCarrito();
+function eliminarDelCarrito(index) {
+  const item = carrito[index];
+  const producto = productos.find(p => p.IdProducto === item.IdProducto);
+  if (producto) producto.Stock += item.Cantidad;
+  carrito.splice(index, 1); renderCatalog(); renderCarrito();
 }
 
 
@@ -399,32 +400,32 @@ async function handlePayment() {
 
   try {
     const itemsProcesados = carrito.map(item => ({
-        IdProducto: item.IdProducto,
-        Nombre: item.Nombre,
-        Precio: item.EnPromocion === 1 ? item.PrecioOferta : item.Precio, 
-        Cantidad: item.Cantidad
+      IdProducto: item.IdProducto,
+      Nombre: item.Nombre,
+      Precio: item.EnPromocion === 1 ? item.PrecioOferta : item.Precio,
+      Cantidad: item.Cantidad
     }));
 
     const bodyEnvio = {
-        items: itemsProcesados,
-        idUsuario: loggedUser ? loggedUser.IdCliente : null,
-        latitud: loggedUser?.latitud || null,
-        longitud: loggedUser?.longitud || null
+      items: itemsProcesados,
+      idUsuario: loggedUser ? loggedUser.IdCliente : null,
+      latitud: loggedUser?.latitud || null,
+      longitud: loggedUser?.longitud || null
     };
 
     const response = await fetch(`${API_BASE}/api/stripe/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyEnvio) 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyEnvio)
     });
 
     const session = await response.json();
-    
+
     if (session.id) {
-        const result = await stripe.redirectToCheckout({ sessionId: session.id });
-        if (result.error) {
-            alert(result.error.message);
-        }
+      const result = await stripe.redirectToCheckout({ sessionId: session.id });
+      if (result.error) {
+        alert(result.error.message);
+      }
     } else {
       throw new Error(session.error || "Error al crear sesión");
     }
@@ -450,7 +451,7 @@ async function finalizarCompra() {
   try {
     showToast("Obteniendo tu ubicación para la entrega...");
     const coords = await obtenerUbicacionCliente();
-    
+
     loggedUser.latitud = coords.lat;
     loggedUser.longitud = coords.lng;
 
@@ -458,7 +459,7 @@ async function finalizarCompra() {
 
   } catch (error) {
     console.warn("No se obtuvo la ubicación:", error);
-    if(confirm("No pudimos obtener tu ubicación GPS exacta. ¿Quieres continuar con la dirección de tu perfil?")) {
+    if (confirm("No pudimos obtener tu ubicación GPS exacta. ¿Quieres continuar con la dirección de tu perfil?")) {
       handlePayment();
     }
   }
@@ -473,7 +474,7 @@ async function renderEntregasLogistica() {
     const res = await fetch(`${API_BASE}/api/sales`);
     const data = await res.json();
     const ventas = data.sales || [];
-    const todosLosPedidos = ventas; 
+    const todosLosPedidos = ventas;
 
     if (todosLosPedidos.length === 0) {
       container.innerHTML = '<p style="padding:15px; color: #888;">No se encontraron pedidos en el sistema.</p>';
@@ -547,7 +548,7 @@ function enfocarPedidoEnMapa(lat, lng, nombre) {
   marcadorAdmin = L.marker([lat, lng]).addTo(mapaAdmin)
     .bindPopup(`<b>Entrega para: ${nombre}</b>`)
     .openPopup();
-    mapaAdmin.flyTo([lat, lng], 16);
+  mapaAdmin.flyTo([lat, lng], 16);
 }
 
 // Función auxiliar para el GPS 
@@ -619,7 +620,7 @@ function abrirModalProducto(id) {
 
       ${controlesCompra} </div>
   `;
-  
+
   show('modalProducto');
 }
 
@@ -643,7 +644,7 @@ function addToCartFromModal(id) {
   const item = {
     ...p,
     Cantidad: cantidad,
-    TallaSeleccionada: talla 
+    TallaSeleccionada: talla
   };
 
   // Lógica para añadir al carrito
@@ -655,14 +656,14 @@ function addToCartFromModal(id) {
   }
 
   p.Stock -= cantidad; // Reducimos el stock
-  
+
   cerrarModal(); // Se cierra la ventana
   showToast(`${p.Nombre} (${talla}) agregado al carrito`);
   renderCarrito(); // Actualizacion de la vista del carrito
 }
 
 function cerrarModal() {
-    document.getElementById('modalProducto').classList.add('hidden');
+  document.getElementById('modalProducto').classList.add('hidden');
 }
 /* ---------------- Admin: Inventario ---------------- */
 const formProducto = el('formProducto');
@@ -678,13 +679,13 @@ formProducto.addEventListener('submit', async e => {
   const Stock = parseInt(el('stock').value);
   const Precio = parseFloat(el('precio').value);
   const Color = el('color').value.trim();
-  
-  
+
+
   const EnPromocion = el('enPromocion').checked ? 1 : 0;
   const PrecioOferta = parseFloat(el('precioOferta').value) || 0;
   const FechaFinPromo = el('fechaFinPromo').value;
 
-  const ImagenFile = el('imagen').files[0]; 
+  const ImagenFile = el('imagen').files[0];
 
 
   const formData = new FormData();
@@ -694,14 +695,14 @@ formProducto.addEventListener('submit', async e => {
   formData.append('Stock', Stock);
   formData.append('Precio', Precio);
   formData.append('Color', Color);
-  
+
   // CAMPOS DE PROMOCIÓN 
   formData.append('EnPromocion', EnPromocion);
   formData.append('PrecioOferta', PrecioOferta);
   formData.append('FechaFinPromo', FechaFinPromo);
-  
+
   if (ImagenFile) {
-      formData.append('Imagen', ImagenFile);
+    formData.append('Imagen', ImagenFile);
   }
 
   try {
@@ -719,8 +720,8 @@ formProducto.addEventListener('submit', async e => {
       alert(editingId ? 'Producto actualizado' : 'Producto agregado con éxito');
       formProducto.reset();
       editingId = null; // Limpia dep ID después de guardar
-      await cargarProductos(); 
-      showAdminPanel(); 
+      await cargarProductos();
+      showAdminPanel();
       showAdminSection('inventario');
     } else {
       alert('Error: ' + data.message);
@@ -731,11 +732,11 @@ formProducto.addEventListener('submit', async e => {
   }
 });
 
-function renderAdminList(){
-  const container=el('adminList'); container.innerHTML='';
-  productos.forEach(p=>{
-    const card=document.createElement('div'); card.className='producto';
-    card.innerHTML=`
+function renderAdminList() {
+  const container = el('adminList'); container.innerHTML = '';
+  productos.forEach(p => {
+    const card = document.createElement('div'); card.className = 'producto';
+    card.innerHTML = `
       <h4>${p.Nombre}</h4>
       <p>Stock: ${p.Stock} | $${p.Precio}</p>
       <button onclick="editProducto(${p.IdProducto})">Editar</button>
@@ -744,8 +745,8 @@ function renderAdminList(){
   });
 }
 
-function editProducto(id){
-const p = productos.find(x => x.IdProducto === id);
+function editProducto(id) {
+  const p = productos.find(x => x.IdProducto === id);
   el('nombre').value = p.Nombre;
   el('talla').value = p.Talla;
   el('categoria').value = p.Categoria;
@@ -755,12 +756,12 @@ const p = productos.find(x => x.IdProducto === id);
   el('enPromocion').checked = p.EnPromocion == 1;
   el('precioOferta').value = p.PrecioOferta || '';
   el('fechaFinPromo').value = p.FechaFinPromo ? p.FechaFinPromo.slice(0, 16) : '';
-    
 
- const imgPreview = el('imgPreview'); 
-    if(imgPreview) imgPreview.src = `${API_BASE}/uploads/${p.Imagen}`;
-    
-    editingId = id;
+
+  const imgPreview = el('imgPreview');
+  if (imgPreview) imgPreview.src = `${API_BASE}/uploads/${p.Imagen}`;
+
+  editingId = id;
 
 }
 
@@ -771,14 +772,14 @@ async function deleteProducto(id) {
   try {
     const res = await fetch(`${API_BASE}/api/products/${id}`, { method: 'DELETE' });
     const data = await res.json();
-    if (res.ok && data.ok) { 
+    if (res.ok && data.ok) {
       alert(' Producto eliminado correctamente.');
-      
+
       await cargarProductos(); // Refresca la lista global
       showAdminPanel();
       showAdminSection('inventario');
     } else {
-      const msgError = data.message && data.message.includes('foreign key') 
+      const msgError = data.message && data.message.includes('foreign key')
         ? "⚠️ No se puede eliminar: Este producto tiene pedidos asociados. Para no perder el historial de ventas, te sugerimos solo agotar el stock."
         : (data.message || 'Error desconocido');
 
@@ -802,7 +803,7 @@ if (formProveedor) {
     const formData = new FormData();
     formData.append('Nombre', el('provNombre').value);
     formData.append('Telefono', el('provTelefono').value);
-    formData.append('Correo', el('provEmail').value); 
+    formData.append('Correo', el('provEmail').value);
     formData.append('Direccion', el('provDireccion').value);
 
     const logoInput = el('provLogo');
@@ -813,7 +814,7 @@ if (formProveedor) {
     try {
       const res = await fetch(`${API_BASE}/api/providers`, {
         method: 'POST',
-        body: formData 
+        body: formData
       });
 
       const data = await res.json();
@@ -832,20 +833,20 @@ if (formProveedor) {
   });
 }
 async function deleteProveedor(id) {
-    if (!confirm('¿Seguro que quieres eliminar este proveedor?')) return;
-    try {
-        const res = await fetch(`${API_BASE}/api/providers/${id}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (data.ok) {
-            renderProveedores();
-        }
-    } catch (err) {
-        console.error("Error al eliminar:", err);
+  if (!confirm('¿Seguro que quieres eliminar este proveedor?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/providers/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.ok) {
+      renderProveedores();
     }
+  } catch (err) {
+    console.error("Error al eliminar:", err);
+  }
 }
 async function renderProveedores() {
   const container = el('listaProveedores');
-  if (!container) return; 
+  if (!container) return;
 
   try {
     const res = await fetch(`${API_BASE}/api/providers`);
@@ -860,8 +861,8 @@ async function renderProveedores() {
 
     container.innerHTML = lista.map(p => {
       const nombreLogo = p.Logo ? p.Logo.replace(/^.*[\\\/]/, '') : '';
-      const urlFinal = p.Logo 
-        ? `${API_BASE}/uploads/${nombreLogo}` 
+      const urlFinal = p.Logo
+        ? `${API_BASE}/uploads/${nombreLogo}`
         : 'https://via.placeholder.com/150/1a1a1a/d4a373?text=Sin+Logo';
 
       return `
@@ -887,9 +888,9 @@ async function renderProveedores() {
 function renderListaVentas(ventas) {
   const container = el('listaVentasHistorial');
   if (!container) return; // Si no existe el elemento, no hace nada
-  
+
   container.innerHTML = '';
-  
+
   if (!ventas || ventas.length === 0) {
     container.innerHTML = '<p>No hay ventas registradas para esta fecha.</p>';
     return;
@@ -906,13 +907,13 @@ function renderListaVentas(ventas) {
   });
 }
 
-function renderCatalogAdmin(){
-  const container = el('catalogAdmin'); 
+function renderCatalogAdmin() {
+  const container = el('catalogAdmin');
   if (!container) return;
   container.innerHTML = '';
-  
+
   productos.forEach(p => {
-    const card = document.createElement('div'); 
+    const card = document.createElement('div');
     card.className = 'producto';
     const nombreImagen = p.Imagen ? p.Imagen.replace('uploads/', '').replace('/uploads/', '') : '';
     const urlFinal = `${API_BASE}/uploads/${nombreImagen}`;
@@ -981,8 +982,8 @@ async function renderEstadisticas() {
     const dataVentas = await resVentas.json();
 
     if (dataVentas.ok) {
-        el('dashIngresosPeriodo').textContent = `$${dataVentas.datos.ingresos_sucios || 0}`;
-        el('dashPedidosPeriodo').textContent = dataVentas.datos.total_pedidos || 0;
+      el('dashIngresosPeriodo').textContent = `$${dataVentas.datos.ingresos_sucios || 0}`;
+      el('dashPedidosPeriodo').textContent = dataVentas.datos.total_pedidos || 0;
     }
 
     // Cargar historial en el panel admin (Últimas 5 ventas)
@@ -990,20 +991,20 @@ async function renderEstadisticas() {
     const dataHistorial = await resHistorial.json();
     const listaH = el('listaVentasHistorial');
     listaH.innerHTML = '';
-    
+
     const ventas = Array.isArray(dataHistorial) ? dataHistorial : (dataHistorial.pedidos || []);
-    
+
     ventas.slice(0, 5).forEach(v => {
-        const div = document.createElement('div');
-        div.className = 'pago-item'; 
-        div.innerHTML = `
+      const div = document.createElement('div');
+      div.className = 'pago-item';
+      div.innerHTML = `
           <div style="display:flex; flex-direction:column;">
             <span style="font-weight:600; color:#333;">${v.NombreC || 'Cliente'}</span>
             <small style="color:#888;">${new Date().toLocaleDateString()}</small> 
           </div>
           <span style="font-weight:bold; color:var(--accent); font-size:1.1rem;">$${v.Total}</span>
         `;
-        listaH.appendChild(div);
+      listaH.appendChild(div);
     });
 
   } catch (err) {
@@ -1020,21 +1021,21 @@ async function renderPagos() {
 
   try {
     const res = await fetch(`${API_BASE}/api/sales`);
-    const pagos = await res.json(); 
+    const pagos = await res.json();
 
-    if(!Array.isArray(pagos) || pagos.length === 0) {
+    if (!Array.isArray(pagos) || pagos.length === 0) {
       container.innerHTML = '<p>No hay pagos registrados</p>';
       return;
     }
 
     let total = 0;
     pagos.forEach(p => {
-      total += parseFloat(p.Total || 0); 
-      
+      total += parseFloat(p.Total || 0);
+
       const div = document.createElement('div');
       div.className = 'pago-item';
       div.textContent = `${new Date(p.Fecha).toLocaleDateString()} - Cliente: ${p.NombreC || 'N/A'} - Total: $${p.Total}`;
-      
+
       container.appendChild(div);
     });
 
@@ -1046,7 +1047,7 @@ async function renderPagos() {
 }
 
 /* ---------------- Toast ---------------- */
-function showToast(msg){ const t=el('cartMessage'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2000); }
+function showToast(msg) { const t = el('cartMessage'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
 
 /* ---------------- Init ---------------- */
 
@@ -1058,21 +1059,21 @@ async function cargarProductos() {
     if (data.ok) {
       productos = data.products;
     } else {
-      productos = data; 
+      productos = data;
     }
-    
+
     // Vista Cliente: Catálogo general
-    renderCatalog();      
-    
+    renderCatalog();
+
     // Vista Cliente: Sección de Ofertas Relámpago 
     if (typeof renderPromociones === 'function') {
-        renderPromociones();
+      renderPromociones();
     }
-    
+
     // Vistas Admin
-    renderAdminList();    
-    renderCatalogAdmin(); 
-    
+    renderAdminList();
+    renderCatalogAdmin();
+
     console.log("Productos cargados y promociones actualizadas:", productos);
   } catch (err) {
     console.error("Error al cargar productos:", err);
@@ -1085,7 +1086,7 @@ async function cargarMasVendido() {
   try {
     const res = await fetch(`${API_BASE}/api/reports/top-product`);
     const data = await res.json();
-    
+
     const contCliente = el('infoEstrellaCliente');
     const contAdmin = el('productoEstrellaContenedor');
 
@@ -1121,8 +1122,8 @@ async function cargarMasVendido() {
         `;
       }
     }
-  } catch (err) { 
-    console.error("Error cargando producto estrella:", err); 
+  } catch (err) {
+    console.error("Error cargando producto estrella:", err);
   }
 }
 
@@ -1190,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', init);
 topProducts.forEach(p => {
   const card = document.createElement('article');
   card.className = 'producto';
-  
+
   const urlFinal = `${API_BASE}/uploads/${p.Imagen.replace('uploads/', '')}`;
 
   card.innerHTML = `
@@ -1204,12 +1205,12 @@ topProducts.forEach(p => {
 
 // validación
 function validarAccesoDetalle(id) {
-    if (!loggedUser) {
-        alert("Para ver detalles y comprar, por favor inicia sesión.");
-        showLogin(); // Muestra el formulario de login
-    } else {
-        abrirModalProducto(id); // Si está logueado, abre el modal normal
-    }
+  if (!loggedUser) {
+    alert("Para ver detalles y comprar, por favor inicia sesión.");
+    showLogin(); // Muestra el formulario de login
+  } else {
+    abrirModalProducto(id); // Si está logueado, abre el modal normal
+  }
 }
 
 function renderPromociones() {
@@ -1220,7 +1221,7 @@ function renderPromociones() {
   const enOferta = productos.filter(p => p.EnPromocion == 1);
 
   if (enOferta.length > 0) {
-    section.classList.remove('hidden'); 
+    section.classList.remove('hidden');
     container.innerHTML = enOferta.map(p => `
       <article class="producto promo-card">
         <span class="badge-promo">⚡ OFERTA</span>
@@ -1238,14 +1239,14 @@ function renderPromociones() {
   }
 }
 function showPromocionesPage() {
-    hideAll();
-    show('catalog');
-    
-    const container = document.getElementById('catalogGrid');
-    const ofertas = productos.filter(p => p.EnPromocion == 1);
-    
-    container.innerHTML = ofertas.length > 0 
-        ? ofertas.map(p => `
+  hideAll();
+  show('catalog');
+
+  const container = document.getElementById('catalogGrid');
+  const ofertas = productos.filter(p => p.EnPromocion == 1);
+
+  container.innerHTML = ofertas.length > 0
+    ? ofertas.map(p => `
             <article class="producto promo-card">
                 <span class="badge-promo">⚡ DESCUENTO</span>
                 <img src="${API_BASE}/uploads/${p.Imagen.replace('uploads/', '')}" alt="${p.Nombre}">
@@ -1257,39 +1258,39 @@ function showPromocionesPage() {
                 <button onclick="abrirModalProducto(${p.IdProducto})">Comprar</button>
             </article>
         `).join('')
-        : '<p style="text-align:center; width:100%;">No hay ofertas activas en este momento.</p>';
+    : '<p style="text-align:center; width:100%;">No hay ofertas activas en este momento.</p>';
 }
 async function showUserHistory() {
-    // 1. Diagnóstico: Mira en la consola si el ID existe realmente
-    console.log("Revisando pedidos para el usuario:", loggedUser);
+  // 1. Diagnóstico: Mira en la consola si el ID existe realmente
+  console.log("Revisando pedidos para el usuario:", loggedUser);
 
-    if (!loggedUser) return;
-    
-    hideAll();
-    show('userHistory');
-    const container = el('historyList');
-    container.innerHTML = '<p>Cargando tus pedidos...</p>';
+  if (!loggedUser) return;
 
-    try {
-        // AJUSTE SEGURO: Usamos IdCliente o id, lo que exista
-        const userId = loggedUser.IdCliente || loggedUser.id; 
-        
-        const res = await fetch(`${API_BASE}/api/sales/usuario/${userId}`);
-        const data = await res.json();
+  hideAll();
+  show('userHistory');
+  const container = el('historyList');
+  container.innerHTML = '<p>Cargando tus pedidos...</p>';
 
-        // 2. Diagnóstico: Mira qué respondió el servidor
-        console.log("Respuesta del servidor:", data);
+  try {
+    // AJUSTE SEGURO: Usamos IdCliente o id, lo que exista
+    const userId = loggedUser.IdCliente || loggedUser.id;
 
-        // AJUSTE DE ESTRUCTURA:
-        // Algunos servidores devuelven 'data.sales', otros solo 'data'
-        const listaPedidos = data.sales || data;
+    const res = await fetch(`${API_BASE}/api/sales/usuario/${userId}`);
+    const data = await res.json();
 
-        if (!listaPedidos || listaPedidos.length === 0) {
-            container.innerHTML = '<p>Aún no has realizado ninguna compra. ¡Anímate!</p>';
-            return;
-        } 
+    // 2. Diagnóstico: Mira qué respondió el servidor
+    console.log("Respuesta del servidor:", data);
 
-        container.innerHTML = listaPedidos.map(p => `
+    // AJUSTE DE ESTRUCTURA:
+    // Algunos servidores devuelven 'data.sales', otros solo 'data'
+    const listaPedidos = data.sales || data;
+
+    if (!listaPedidos || listaPedidos.length === 0) {
+      container.innerHTML = '<p>Aún no has realizado ninguna compra. ¡Anímate!</p>';
+      return;
+    }
+
+    container.innerHTML = listaPedidos.map(p => `
     <div class="pedido-card" style="margin-bottom: 20px; padding: 25px; border-radius: 15px; background: #111; border: 1px solid #222; border-left: 5px solid #d4a373; display: flex; justify-content: space-between; align-items: center;">
         
         <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -1318,30 +1319,30 @@ async function showUserHistory() {
     </div>
 `).join('');
 
-    } catch (err) {
-        console.error("Error al cargar historial:", err);
-        container.innerHTML = '<p>Hubo un error al obtener tus pedidos.</p>';
-    }
+  } catch (err) {
+    console.error("Error al cargar historial:", err);
+    container.innerHTML = '<p>Hubo un error al obtener tus pedidos.</p>';
+  }
 }
 
-async function verDetallePedido(idPedido) { 
-    try {
-        const response = await fetch(`${API_BASE}/api/sales/detalle/${idPedido}`);
-        const data = await response.json(); 
-        const detalles = data.detail;
+async function verDetallePedido(idPedido) {
+  try {
+    const response = await fetch(`${API_BASE}/api/sales/detalle/${idPedido}`);
+    const data = await response.json();
+    const detalles = data.detail;
 
-        if (!detalles || detalles.length === 0) {
-            alert("No se encontraron productos para este pedido.");
-            return;
-        }
+    if (!detalles || detalles.length === 0) {
+      alert("No se encontraron productos para este pedido.");
+      return;
+    }
 
-        // --- LÓGICA DE ESTADOS (STEPPER) ---
-        const estadosNombres = ['Pagado', 'Preparando', 'En Camino', 'Entregado'];
-        // Usamos 'Estado' que viene del JOIN en el backend
-        const estadoActual = parseInt(detalles[0].Estado) || 1; 
-        let pasoActivo = estadoActual - 1; 
+    // --- LÓGICA DE ESTADOS (STEPPER) ---
+    const estadosNombres = ['Pagado', 'Preparando', 'En Camino', 'Entregado'];
+    // Usamos 'Estado' que viene del JOIN en el backend
+    const estadoActual = parseInt(detalles[0].Estado) || 1;
+    let pasoActivo = estadoActual - 1;
 
-        const stepperHTML = `
+    const stepperHTML = `
             <div style="display: flex; justify-content: space-between; margin: 25px 0; position: relative; padding: 0 10px;">
                 <div style="position: absolute; top: 15px; left: 10%; width: 80%; height: 2px; background: #333; z-index: 1;"></div>
                 <div style="position: absolute; top: 15px; left: 10%; width: ${(pasoActivo / 3) * 80}%; height: 2px; background: #d4a373; z-index: 2; transition: width 0.5s ease;"></div>
@@ -1361,18 +1362,18 @@ async function verDetallePedido(idPedido) {
             </div>
         `;
 
-        // Generar Lista de Productos
-        const detalleHTML = detalles.map(item => {
-            // CORRECCIÓN IMAGEN: Sacamos solo el nombre del archivo para evitar rutas rotas
-            const nombreImg = item.Imagen ? item.Imagen.split(/[\\/]/).pop() : '';
-            const urlFinal = `${API_BASE}/uploads/${nombreImg}`;
-            
-            // CORRECCIÓN PRECIO: Validamos múltiples nombres de columna para evitar NaN
-            const precioUnitario = parseFloat(item.PrecioUnitario || item.Precio || 0);
-            const cantidad = parseInt(item.Cantidad || 0);
-            const subtotal = (precioUnitario * cantidad).toFixed(2);
-            
-            return `
+    // Generar Lista de Productos
+    const detalleHTML = detalles.map(item => {
+      // CORRECCIÓN IMAGEN: Sacamos solo el nombre del archivo para evitar rutas rotas
+      const nombreImg = item.Imagen ? item.Imagen.split(/[\\/]/).pop() : '';
+      const urlFinal = `${API_BASE}/uploads/${nombreImg}`;
+
+      // CORRECCIÓN PRECIO: Validamos múltiples nombres de columna para evitar NaN
+      const precioUnitario = parseFloat(item.PrecioUnitario || item.Precio || 0);
+      const cantidad = parseInt(item.Cantidad || 0);
+      const subtotal = (precioUnitario * cantidad).toFixed(2);
+
+      return `
                 <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 12px; border-bottom: 1px solid #333; padding-bottom: 10px;">
                     <img src="${urlFinal}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #444;" 
                          onerror="this.src='https://via.placeholder.com/70?text=Error'">
@@ -1383,14 +1384,14 @@ async function verDetallePedido(idPedido) {
                     <span style="font-weight: bold; color: #d4a373; font-size: 1.1rem;">$${subtotal}</span>
                 </div>
             `;
-        }).join('');
+    }).join('');
 
-        // Inyectar en el Modal
-        const modalBody = el('modalBody');
-        // Usamos TotalPedido que viene de la consulta del backend
-        const totalFinal = parseFloat(detalles[0].TotalPedido || detalles[0].Total || 0).toFixed(2);
+    // Inyectar en el Modal
+    const modalBody = el('modalBody');
+    // Usamos TotalPedido que viene de la consulta del backend
+    const totalFinal = parseFloat(detalles[0].TotalPedido || detalles[0].Total || 0).toFixed(2);
 
-        modalBody.innerHTML = `
+    modalBody.innerHTML = `
             <button class="close-modal" onclick="cerrarModal()">×</button>
             <h2 style="color: #fff; margin-top: 0; text-align: center;">Resumen de Compra</h2>
             <p style="color: #d4a373; font-size: 0.9rem; margin-bottom: 5px; text-align: center; font-weight: bold;">Orden: #MS-${idPedido}</p>
@@ -1406,41 +1407,41 @@ async function verDetallePedido(idPedido) {
                 <div style="font-size: 1.8rem; font-weight: 800; color: #fff;">$${totalFinal}</div>
             </div>
         `;
-        show('modalProducto'); 
-        
-    } catch (err) {
-        console.error("Error al obtener detalles:", err);
-        showToast("❌ No se pudo cargar el detalle.");
-    }
+    show('modalProducto');
+
+  } catch (err) {
+    console.error("Error al obtener detalles:", err);
+    showToast("❌ No se pudo cargar el detalle.");
+  }
 }
 
 async function generarReporteVentas() {
-    const inicio = document.getElementById('reporteVentaInicio').value;
-    const fin = document.getElementById('reporteVentaFin').value;
-    
-    if(!inicio || !fin) return alert("Por favor, selecciona un rango de fechas.");
+  const inicio = document.getElementById('reporteVentaInicio').value;
+  const fin = document.getElementById('reporteVentaFin').value;
 
-    try {
-        const res = await fetch(`${API_BASE}/api/reports/sales?start=${inicio}&end=${fin}`);
-        const data = await res.json();
-        
-        document.getElementById('ingresosTotalesReporte').innerText = `$${data.totalIngresos.toFixed(2)}`;
-        document.getElementById('pedidosTotalesReporte').innerText = data.totalPedidos;
-    } catch (err) {
-        console.error("Error al generar reporte de ventas:", err);
-    }
+  if (!inicio || !fin) return alert("Por favor, selecciona un rango de fechas.");
+
+  try {
+    const res = await fetch(`${API_BASE}/api/reports/sales?start=${inicio}&end=${fin}`);
+    const data = await res.json();
+
+    document.getElementById('ingresosTotalesReporte').innerText = `$${data.totalIngresos.toFixed(2)}`;
+    document.getElementById('pedidosTotalesReporte').innerText = data.totalPedidos;
+  } catch (err) {
+    console.error("Error al generar reporte de ventas:", err);
+  }
 }
 
 function renderStockCritico() {
-    const lista = el('listaStockCritico');
-    if (!lista) return;
-    const criticos = productos.filter(p => p.Stock < 5);
-    
-    if(criticos.length === 0) {
-        lista.innerHTML = '<p style="color: #4CAF50; font-size: 0.8rem;">Todo el stock está en niveles óptimos.</p>';
-        return;
-    }
-    lista.innerHTML = criticos.map(p => `
+  const lista = el('listaStockCritico');
+  if (!lista) return;
+  const criticos = productos.filter(p => p.Stock < 5);
+
+  if (criticos.length === 0) {
+    lista.innerHTML = '<p style="color: #4CAF50; font-size: 0.8rem;">Todo el stock está en niveles óptimos.</p>';
+    return;
+  }
+  lista.innerHTML = criticos.map(p => `
         <div class="stock-item-alert" style="display:flex; justify-content:space-between; margin-bottom:5px;">
             <span>${p.Nombre}</span>
             <b style="color: #ff4444;">Quedan: ${p.Stock}</b>
@@ -1449,154 +1450,154 @@ function renderStockCritico() {
 }
 
 function showUserProfile() {
-    if (!loggedUser) return showLogin();
-    hideAll(); 
-    show('userProfile'); 
+  if (!loggedUser) return showLogin();
+  hideAll();
+  show('userProfile');
 
-    el('perfilNombre').value = loggedUser.NombreC || '';
-    el('perfilTelefono').value = loggedUser.Telefono || '';
-    el('perfilDireccion').value = loggedUser.Direccion || '';
+  el('perfilNombre').value = loggedUser.NombreC || '';
+  el('perfilTelefono').value = loggedUser.Telefono || '';
+  el('perfilDireccion').value = loggedUser.Direccion || '';
 }
 
-async function actualizarEstadoPedido(idPedido, nuevoEstado, idCliente) { 
-    try {
-        const res = await fetch(`${API_BASE}/api/sales/update-status/${idPedido}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                nuevoEstado, 
-                idCliente // <-- IMPORTANTE: Enviamos esto al backend
-            }) 
-        });
+async function actualizarEstadoPedido(idPedido, nuevoEstado, idCliente) {
+  try {
+    const res = await fetch(`${API_BASE}/api/sales/update-status/${idPedido}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nuevoEstado,
+        idCliente // <-- IMPORTANTE: Enviamos esto al backend
+      })
+    });
 
-        const data = await res.json();
+    const data = await res.json();
 
-        if (res.ok && data.ok) {
-            const nombreEstado = estadosLogistica[nuevoEstado] || "Actualizado";
-            showToast(`✅ Orden #${idPedido} actualizada a: ${nombreEstado}`);
+    if (res.ok && data.ok) {
+      const nombreEstado = estadosLogistica[nuevoEstado] || "Actualizado";
+      showToast(`✅ Orden #${idPedido} actualizada a: ${nombreEstado}`);
 
-            // RE-RENDERIZADO CRÍTICO:
-            // Esto actualiza la lista de logística (el mapa y las tarjetas del admin)
-            if (typeof renderEntregasLogistica === 'function') {
-                await renderEntregasLogistica(); 
-            }
-            
-            // Esto actualiza los números del Dashboard (ingresos, pedidos del periodo)
-            if (typeof renderEstadisticas === 'function') {
-                renderEstadisticas(); 
-            }
+      // RE-RENDERIZADO CRÍTICO:
+      // Esto actualiza la lista de logística (el mapa y las tarjetas del admin)
+      if (typeof renderEntregasLogistica === 'function') {
+        await renderEntregasLogistica();
+      }
 
-            // Notificación visual en la campana del Admin
-            if (typeof agregarNotificacion === 'function') {
-                agregarNotificacion(`Orden #${idPedido} pasó a: ${nombreEstado}`);
-            }
+      // Esto actualiza los números del Dashboard (ingresos, pedidos del periodo)
+      if (typeof renderEstadisticas === 'function') {
+        renderEstadisticas();
+      }
 
-        } else {
-            alert("❌ Error: " + (data.message || "No se pudo actualizar."));
-        }
-    } catch (err) {
-        console.error("Error crítico en actualizarEstadoPedido:", err);
-        showToast("❌ Error de conexión con el servidor.");
+      // Notificación visual en la campana del Admin
+      if (typeof agregarNotificacion === 'function') {
+        agregarNotificacion(`Orden #${idPedido} pasó a: ${nombreEstado}`);
+      }
+
+    } else {
+      alert("❌ Error: " + (data.message || "No se pudo actualizar."));
     }
+  } catch (err) {
+    console.error("Error crítico en actualizarEstadoPedido:", err);
+    showToast("❌ Error de conexión con el servidor.");
+  }
 }
 
 function enviarNotificacion(mensaje, tipo = 'info') {
-    const list = el('notiList');
-    if (!list) return;
+  const list = el('notiList');
+  if (!list) return;
 
-    // Quitar el mensaje de "No tienes notificaciones"
-    if (list.innerHTML.includes('No tienes')) list.innerHTML = '';
+  // Quitar el mensaje de "No tienes notificaciones"
+  if (list.innerHTML.includes('No tienes')) list.innerHTML = '';
 
-    const fecha = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const item = document.createElement('div');
-    item.className = `noti-item ${tipo}`;
-    item.innerHTML = `
+  const fecha = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const item = document.createElement('div');
+  item.className = `noti-item ${tipo}`;
+  item.innerHTML = `
         <small>${fecha}</small>
         <p>${mensaje}</p>
     `;
-    
-    list.prepend(item); // Poner la más reciente arriba
-    
-    // Actualizar el contador
-    const count = el('notiCount');
-    count.textContent = parseInt(count.textContent || 0) + 1;
-    count.classList.remove('hidden');
+
+  list.prepend(item); // Poner la más reciente arriba
+
+  // Actualizar el contador
+  const count = el('notiCount');
+  count.textContent = parseInt(count.textContent || 0) + 1;
+  count.classList.remove('hidden');
 }
 
 function agregarNotificacion(mensaje) {
-    const list = el('notiList');
-    const countBadge = el('notiCount');
-    
-    // Si es la primera, limpiamos el mensaje de "vacío"
-    if (list.querySelector('.empty-noti')) list.innerHTML = '';
+  const list = el('notiList');
+  const countBadge = el('notiCount');
 
-    const ahora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    const div = document.createElement('div');
-    div.className = 'noti-item';
-    div.innerHTML = `
+  // Si es la primera, limpiamos el mensaje de "vacío"
+  if (list.querySelector('.empty-noti')) list.innerHTML = '';
+
+  const ahora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const div = document.createElement('div');
+  div.className = 'noti-item';
+  div.innerHTML = `
         <small>${ahora}</small>
         <p style="margin: 5px 0 0; color: #444; font-size: 0.85rem;">${mensaje}</p>
     `;
-    
-    list.prepend(div);
 
-    // Actualizar círculo rojo
-    let actuales = parseInt(countBadge.textContent) || 0;
-    actuales++;
-    countBadge.textContent = actuales;
-    countBadge.style.display = 'flex'; // Mostrar el circulito
+  list.prepend(div);
+
+  // Actualizar círculo rojo
+  let actuales = parseInt(countBadge.textContent) || 0;
+  actuales++;
+  countBadge.textContent = actuales;
+  countBadge.style.display = 'flex'; // Mostrar el circulito
 }
 
 // Función para abrir/cerrar
 function toggleNotiBox() {
-    const box = el('notiBox');
-    box.classList.toggle('hidden');
-    
-    // Opcional: Limpiar contador al abrir
-    if (!box.classList.contains('hidden')) {
-        el('notiCount').style.display = 'none';
-        el('notiCount').textContent = '0';
-    }
+  const box = el('notiBox');
+  box.classList.toggle('hidden');
+
+  // Opcional: Limpiar contador al abrir
+  if (!box.classList.contains('hidden')) {
+    el('notiCount').style.display = 'none';
+    el('notiCount').textContent = '0';
+  }
 }
 // Abrir y cerrar la cajita de notificaciones
 function toggleNotiBox() {
-    const box = document.getElementById('notiBox');
-    box.classList.toggle('hidden');
-    // Si la abrimos, podrías marcar como leídas (opcional)
+  const box = document.getElementById('notiBox');
+  box.classList.toggle('hidden');
+  // Si la abrimos, podrías marcar como leídas (opcional)
 }
 
 // Buscar notificaciones en la base de datos
 async function cargarNotificaciones() {
-    const user = JSON.parse(localStorage.getItem('usuario')); // O como guardes tu sesión
-    if (!user) return;
+  const user = JSON.parse(localStorage.getItem('usuario')); // O como guardes tu sesión
+  if (!user) return;
 
-    const destino = user.rol === 'admin' ? 'admin' : 'cliente';
-    const url = `${API_BASE}/api/notificaciones/${destino}/${user.id}`;
+  const destino = user.rol === 'admin' ? 'admin' : 'cliente';
+  const url = `${API_BASE}/api/notificaciones/${destino}/${user.id}`;
 
-    try {
-        const res = await fetch(url);
-        const data = await res.json();
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
 
-        if (data.ok) {
-            const lista = document.getElementById('notiList');
-            const count = document.getElementById('notiCount');
-            
-            if (data.notificaciones.length > 0) {
-                count.innerText = data.notificaciones.length;
-                count.style.display = 'block';
-                
-                lista.innerHTML = data.notificaciones.map(n => `
+    if (data.ok) {
+      const lista = document.getElementById('notiList');
+      const count = document.getElementById('notiCount');
+
+      if (data.notificaciones.length > 0) {
+        count.innerText = data.notificaciones.length;
+        count.style.display = 'block';
+
+        lista.innerHTML = data.notificaciones.map(n => `
                     <div style="padding: 10px; border-bottom: 1px solid #222; font-size: 0.85rem;">
                         <p style="margin:0; color: white;">${n.Mensaje}</p>
                         <small style="color: #666;">${new Date(n.Fecha).toLocaleString()}</small>
                     </div>
                 `).join('');
-            }
-        }
-    } catch (err) {
-        console.log("Error al cargar notificaciones");
+      }
     }
+  } catch (err) {
+    console.log("Error al cargar notificaciones");
+  }
 }
 
 // Revisar cada 1 minuto
@@ -1604,36 +1605,36 @@ setInterval(cargarNotificaciones, 60000);
 
 // Abrir el modal y llenar el selector de productos
 async function abrirModalAjusteStock() {
-    const res = await fetch(`${API_BASE}/api/products`); // Ajusta a tu ruta de productos
-    const productos = await res.json();
-    
-    const select = document.getElementById('selectProductoStock');
-    select.innerHTML = productos.map(p => `<option value="${p.IdProducto}">${p.Nombre} (Stock actual: ${p.Stock})</option>`).join('');
-    
-    document.getElementById('modalAjusteStock').classList.remove('hidden');
+  const res = await fetch(`${API_BASE}/api/products`); // Ajusta a tu ruta de productos
+  const productos = await res.json();
+
+  const select = document.getElementById('selectProductoStock');
+  select.innerHTML = productos.map(p => `<option value="${p.IdProducto}">${p.Nombre} (Stock actual: ${p.Stock})</option>`).join('');
+
+  document.getElementById('modalAjusteStock').classList.remove('hidden');
 }
 
 // Enviar la nueva cantidad al servidor
 async function confirmarAjusteStock() {
-    const idProducto = document.getElementById('selectProductoStock').value;
-    const cantidadNueva = document.getElementById('inputNuevaCantidad').value;
+  const idProducto = document.getElementById('selectProductoStock').value;
+  const cantidadNueva = document.getElementById('inputNuevaCantidad').value;
 
-    if (!cantidadNueva) return alert("Ingresa una cantidad");
+  if (!cantidadNueva) return alert("Ingresa una cantidad");
 
-    try {
-        const res = await fetch(`${API_BASE}/api/sales/adjust-stock`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idProducto, cantidadNueva })
-        });
+  try {
+    const res = await fetch(`${API_BASE}/api/sales/adjust-stock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idProducto, cantidadNueva })
+    });
 
-        const data = await res.json();
-        if (data.ok) {
-            alert("✅ Stock actualizado");
-            document.getElementById('modalAjusteStock').classList.add('hidden');
-            if (typeof renderAdminProducts === 'function') renderAdminProducts(); // Recargar lista
-        }
-    } catch (err) {
-        alert("Error al actualizar stock");
+    const data = await res.json();
+    if (data.ok) {
+      alert("✅ Stock actualizado");
+      document.getElementById('modalAjusteStock').classList.add('hidden');
+      if (typeof renderAdminProducts === 'function') renderAdminProducts(); // Recargar lista
     }
+  } catch (err) {
+    alert("Error al actualizar stock");
+  }
 }

@@ -1,0 +1,59 @@
+/* ============================================================
+   6. SHOPPING CART & CHECKOUT - cart.css
+   ============================================================ */
+
+#cart {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 30px;
+    box-shadow: var(--shadow-lux);
+}
+
+#cartContents {
+    margin-top: 20px;
+}
+
+.cart-summary {
+    text-align: right; 
+    padding: 20px; 
+    border-top: 2px solid #333;
+}
+
+.cart-summary h4 {
+    margin: 10px 0;
+    color: white;
+}
+
+.cart-summary h4 span {
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+
+/* --- CART FOOTER --- */
+.cart-footer {
+    display: flex; 
+    justify-content: flex-end; 
+    gap: 20px;
+    padding: 30px; 
+    background: #161616; 
+    border-radius: 0 0 20px 20px;
+}
+
+/* --- CHECKOUT & STRIPE STRAP --- */
+#checkout-button {
+    background-color: #ffffff; 
+    color: #000000;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#checkout-button:hover {
+    background-color: var(--accent);
+    color: white;
+}

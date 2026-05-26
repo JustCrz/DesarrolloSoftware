@@ -46,6 +46,19 @@ async function getSalesByUser(req, res) {
 async function getSaleDetail(req, res) {
     const { id } = req.params;
     try {
+        const [orderRows] = await pool.query(
+            'SELECT IdCliente FROM pedido WHERE IdPedido = ?',
+            [id]
+        );
+
+        if (orderRows.length === 0) {
+            return res.status(404).json({ ok: false, message: 'Pedido no encontrado' });
+        }
+
+        if (req.user.role !== 'admin' && Number(orderRows[0].IdCliente) !== Number(req.user.id)) {
+            return res.status(403).json({ ok: false, message: 'Acceso denegado' });
+        }
+
         const [rows] = await pool.query(
             `SELECT dp.Cantidad, 
                     p.Precio as PrecioUnitario, 
@@ -75,6 +88,10 @@ async function getSaleDetail(req, res) {
 async function createSale(req, res) {
     const { IdCliente, productos } = req.body;
     try {
+        if (req.user.role !== 'admin' && Number(IdCliente) !== Number(req.user.id)) {
+            return res.status(403).json({ ok: false, message: 'Acceso denegado' });
+        }
+
         if (!productos || productos.length === 0) {
             return res.status(400).json({ ok: false, message: 'No hay productos en la venta' });
         }

@@ -1,0 +1,47 @@
+<div id="adminInventario" class="adminSection">
+  <div class="admin-section-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h3>Gestión de Inventario</h3>
+        <p>Actualiza el stock y los datos base de tus productos.</p>
+    </div>
+    <button class="btn-hero" onclick="abrirModalAjusteStock()" style="font-size: 0.8rem; padding: 10px;"> Ajuste Manual Rápido</button>
+  </div>
+  
+  <form id="formProducto" class="admin-form-grid">
+    <div class="input-group">
+        <label>Nombre del Producto</label>
+        <input id="nombre" placeholder="Ej. Chaleco Sastre" required />
+    </div>
+    <div class="input-group">
+        <label>Categoría</label>
+        <input id="categoria" placeholder="Ej. Formal" />
+    </div>
+    <div class="input-group">
+        <label>Talla</label>
+        <input id="talla" placeholder="S, M, L..." />
+    </div>
+    <div class="input-group">
+        <label>Color</label>
+        <input id="color" placeholder="Ej. Negro" />
+    </div>
+    <div class="input-group">
+        <label>Precio</label>
+        <input id="precio" type="number" placeholder="0.00" required />
+    </div>
+    <div class="input-group">
+        <label>Unidades en Stock</label>
+        <input id="stock" type="number" placeholder="0" required />
+    </div>
+    <div class="input-group full-width">
+        <label>Imagen del Producto</label>
+        <input id="imagen" type="file" accept="image/*" class="file-input" />
+    </div>
+
+    <div class="form-actions-admin full-width">
+      <button type="submit" class="btn-save-admin">Guardar en Inventario</button>
+      <button type="reset" class="btn-reset-admin">Limpiar Formulario</button>
+    </div>
+  </form>
+  
+  <div id="adminList" class="grid admin-grid" style="margin-top: 30px;"></div>
+</div>

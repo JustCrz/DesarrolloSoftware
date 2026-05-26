@@ -1,0 +1,36 @@
+<div id="adminProveedores" class="adminSection">
+  <div class="admin-section-header">
+    <h3> Control de Proveedores</h3>
+    <p>Registra tus proveedores y sube su logo para identificarlos mejor.</p>
+  </div>
+  
+  <form id="formProveedor" class="admin-form-grid">
+    <div class="input-group">
+        <label>Nombre Empresa</label>
+        <input id="provNombre" placeholder="Nombre proveedor" required />
+    </div>
+    <div class="input-group">
+        <label>Teléfono</label>
+        <input id="provTelefono" type="tel" placeholder="Teléfono" required />
+    </div>
+    <div class="input-group">
+        <label>Email</label>
+        <input id="provEmail" type="email" placeholder="Email" />
+    </div>
+    <div class="input-group">
+        <label>Dirección</label>
+        <input id="provDireccion" placeholder="Dirección" required />
+    </div>
+    <div class="input-group full-width">
+        <label>Logo del Proveedor</label>
+        <input id="provLogo" type="file" accept="image/*" class="file-input" />
+    </div>
+    
+    <div class="form-actions-admin full-width">
+        <button type="submit" class="btn-save-admin">Agregar Proveedor</button>
+        <button type="reset" class="btn-reset-admin">Limpiar</button>
+    </div>
+  </form>
+  
+  <div id="listaProveedores" style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;"></div>
+</div>

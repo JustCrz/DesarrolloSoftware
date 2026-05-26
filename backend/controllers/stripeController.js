@@ -3,7 +3,14 @@ const salesController = require('./sales.controller');
 
 async function createCheckoutSession(req, res) {
     try {
-        const { items, idUsuario, latitud, longitud } = req.body;
+        const { items, latitud, longitud } = req.body;
+        const idUsuario = req.user.id;
+
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'No hay productos para pagar' });
+        }
+
+        const frontendOrigin = req.headers.origin || 'http://localhost:5500' || "127.0.1:5500" || "https://marjoriestore.vercel.app";
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -30,13 +37,13 @@ async function createCheckoutSession(req, res) {
                     Cantidad: i.Cantidad,
                     Precio: i.PrecioOferta > 0 && i.EnPromocion == 1 ? i.PrecioOferta : i.Precio
                 }))),
-                idUsuario: idUsuario,
-                latitud: latitud || null,
-                longitud: longitud || null
+                idUsuario: String(idUsuario),
+                latitud: latitud == null ? '' : String(latitud),
+                longitud: longitud == null ? '' : String(longitud)
             },
            
-            success_url: 'http://localhost:3000/success.html',
-            cancel_url: 'http://localhost:3000/index.html', 
+            success_url: `${frontendOrigin}/success.html`,
+            cancel_url: `${frontendOrigin}/index.html`, 
         });
 
         res.json({ id: session.id });

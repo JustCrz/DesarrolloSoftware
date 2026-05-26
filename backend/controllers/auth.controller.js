@@ -3,6 +3,8 @@
  */
 const pool = require('../bd');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../middleware/auth');
 
 /**
  * Autenticar usuario por correo y contraseña
@@ -51,15 +53,18 @@ async function authlogin(req, res) {
       });
     }
 
-    // 5. Lógica de Roles 
-    // Definimos quiénes son administradores.
-    const admins = ['admin@tienda.com', 'gerente@tienda.com', 'marjorie@tienda.com'];
-    const role = admins.includes(user.Correo) ? 'admin' : 'cliente';
+    const role = user.role || 'cliente';
+    const token = jwt.sign(
+      { id: user.IdCliente, role },
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
 
     // 6. Respuesta exitosa con los datos que necesita tu script.js
    return res.json({
       ok: true,
       message: 'Bienvenido a Marjorie Store',
+      token,
       user: {
         IdCliente: user.IdCliente, 
         nombre: user.NombreC,
@@ -77,7 +82,34 @@ async function authlogin(req, res) {
   }
 }
 
-// Cambia el final por:
+async function me(req, res) {
+  try {
+    const [rows] = await pool.query(
+      'SELECT IdCliente, NombreC, Correo, role FROM cliente WHERE IdCliente = ?',
+      [req.user.id]
+    );
+
+    const user = rows[0];
+    if (!user) {
+      return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+    }
+
+    res.json({
+      ok: true,
+      user: {
+        IdCliente: user.IdCliente,
+        nombre: user.NombreC,
+        correo: user.Correo,
+        role: user.role || 'cliente'
+      }
+    });
+  } catch (err) {
+    console.error('Error en /me:', err);
+    res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+}
+
 module.exports = {
-    authlogin
+    authlogin,
+    me
 };

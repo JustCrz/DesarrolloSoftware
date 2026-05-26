@@ -81,8 +81,34 @@ async function getSalesByDate(req, res) {
 }
 
 // Exportación limpia para las rutas
+async function getSalesByRange(req, res) {
+  const { start, end } = req.query;
+
+  if (!start || !end) {
+    return res.status(400).json({ ok: false, message: 'Debe proporcionar fecha inicial y final' });
+  }
+
+  try {
+    const [rows] = await pool.query(`
+      SELECT COUNT(IdPedido) as totalPedidos, COALESCE(SUM(Total), 0) as totalIngresos
+      FROM pedido
+      WHERE DATE(Fecha) BETWEEN ? AND ?
+    `, [start, end]);
+
+    res.json({
+      ok: true,
+      totalPedidos: rows[0]?.totalPedidos || 0,
+      totalIngresos: Number(rows[0]?.totalIngresos || 0)
+    });
+  } catch (err) {
+    console.error("Error en getSalesByRange:", err);
+    res.status(500).json({ ok: false, message: 'Error al generar reporte de ventas' });
+  }
+}
+
 module.exports = {
   getTopProduct,
   getDailySummary,
-  getSalesByDate
+  getSalesByDate,
+  getSalesByRange
 };

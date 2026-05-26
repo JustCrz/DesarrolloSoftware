@@ -1,0 +1,24 @@
+<section id="userProfile" class="card" style="max-width: 600px; margin: 20px auto;">
+  <div class="admin-section-header">
+      <h3> Mi Perfil</h3>
+      <p>Actualiza tu información de contacto y envío.</p>
+  </div>
+  <form id="formActualizarPerfil" class="admin-form-grid">
+      <div class="input-group">
+          <label>Nombre Completo *</label>
+          <input type="text" id="perfilNombre" required />
+      </div>
+      <div class="input-group">
+          <label>Teléfono *</label>
+          <input type="tel" id="perfilTelefono" required />
+      </div>
+      <div class="input-group full-width">
+          <label>Dirección de Envío *</label>
+          <input type="text" id="perfilDireccion" required />
+      </div>
+      <div class="form-actions-admin full-width">
+          <button type="submit" class="btn-save-admin">Guardar Cambios</button>
+          <button type="button" class="btn-reset-admin" onclick="showCatalog()">Cancelar</button>
+      </div>
+  </form>
+</section>

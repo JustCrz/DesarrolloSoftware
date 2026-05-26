@@ -1,0 +1,184 @@
+/* ============================================================
+   4. CATALOG & PRODUCT GALLERY - catalog.css
+   ============================================================ */
+
+/* --- CORE CATALOG GRIDS --- */
+#catalogGrid, #bestSellersGrid, #promoGrid, .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 45px;
+    padding: 30px 0;
+}
+
+/* --- STAR PRODUCT (PRODUCTO ESTRELLA) --- */
+#infoEstrellaCliente {
+    background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+    padding: 50px;
+    border-radius: var(--radius);
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 60px;
+    align-items: center;
+    border: 1px solid var(--accent-soft);
+    margin-bottom: 80px;
+    position: relative;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+}
+
+#infoEstrellaCliente img {
+    width: 100%; 
+    height: 500px; 
+    object-fit: cover;
+    border-radius: 15px; 
+    border: 2px solid var(--accent);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+#infoEstrellaCliente strong {
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem; 
+    color: var(--accent);
+    display: block; 
+    margin-bottom: 15px; 
+    line-height: 1;
+}
+
+.btn-estrella-action {
+    background: white; 
+    color: black; 
+    border: none;
+    padding: 18px 45px; 
+    border-radius: 50px;
+    font-weight: 800; 
+    text-transform: uppercase;
+    letter-spacing: 2px; 
+    margin-top: 30px; 
+    cursor: pointer;
+}
+
+.btn-estrella-action:hover { 
+    background: var(--accent); 
+    color: white; 
+    transform: scale(1.05); 
+}
+
+/* --- BOUTIQUE LUXURY PRODUCT CARD --- */
+.producto {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(10, 10, 10, 0.8) 100%) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(212, 163, 115, 0.2) !important;
+    border-radius: 20px !important;
+    padding: 15px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+    filter: none !important;
+}
+
+.producto:hover {
+    transform: translateY(-15px) scale(1.02) !important;
+    border-color: rgba(212, 163, 115, 0.6) !important;
+    box-shadow: 0 30px 60px rgba(212, 163, 115, 0.2) !important;
+}
+
+.producto .img-container {
+    width: 100%;
+    height: 350px; 
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    box-shadow: inset 0 0 15px rgba(212, 163, 115, 0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.producto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1s ease;
+}
+
+.producto:hover img {
+    transform: scale(1.08);
+}
+
+.producto h3 {
+    font-family: 'Playfair Display', serif;
+    color: #ffffff !important;
+    font-size: 1.3rem !important;
+    margin: 10px 0 5px !important;
+    text-align: center;
+}
+
+.producto .categoria-tag {
+    color: #888888 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.producto p.precio {
+    color: var(--accent) !important;
+    font-size: 1.6rem !important;
+    font-weight: 300 !important;
+    text-align: center;
+    margin: 10px 0 20px !important;
+}
+
+.producto .stars, 
+.producto .rating {
+    color: #ffcc00 !important;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+/* --- MASTER VISIBILITY FORCE FOR PRICES & BUTTONS --- */
+body .producto p.precio, 
+body #bestSellersGrid .producto p.precio, 
+body #catalogGrid .producto p.precio,
+body .modal-info-side .price {
+    color: #d4a373 !important; 
+    fill: #d4a373 !important;
+    -webkit-text-fill-color: #d4a373 !important;
+    opacity: 1 !important;
+    display: block !important;
+    visibility: visible !important;
+    font-weight: 800 !important;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9) !important;
+}
+
+body .producto button, 
+body .btn-ver-detalles,
+body [id*="Grid"] .producto button {
+    background: linear-gradient(135deg, #d4a373 0%, #b88655 100%) !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(212, 163, 115, 0.3) !important;
+    padding: 12px 20px !important;
+    border-radius: 50px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+}
+
+body .producto span, 
+body .producto .categoria-tag,
+body .producto p:not(.precio) {
+    color: #ffffff !important;
+    opacity: 0.9 !important;
+}
+
+/* --- RESPONSIVE ADJUSTMENTS --- */
+@media (max-width: 1100px) {
+    #infoEstrellaCliente { 
+        padding: 30px; 
+    }
+    #infoEstrellaCliente img { 
+        height: 350px; 
+    }
+}

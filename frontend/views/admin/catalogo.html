@@ -1,0 +1,19 @@
+<div id="adminCatalogo" class="adminSection">
+  <div class="admin-section-header">
+    <h3> Control de Catálogo y Ofertas</h3>
+    <p>Configura descuentos y visibilidad aquí.</p>
+  </div>
+  
+  <div class="card promo-config" style="padding: 15px; border: 1px solid var(--accent); margin-bottom: 20px; background: #1a1a1a;">
+        <label style="display: flex; align-items: center; gap: 10px; color: white; cursor: pointer;">
+            <input type="checkbox" id="enPromocion" style="width: auto;"> ¿Activar promoción en el producto seleccionado?
+        </label>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <input id="precioOferta" type="number" placeholder="Precio de oferta" style="flex: 1;" />
+            <input id="fechaFinPromo" type="datetime-local" style="flex: 1;" />
+        </div>
+        <small style="color: #888; margin-top: 5px; display: block;">Nota: El precio de oferta se mostrará resaltado en la tienda.</small>
+  </div>
+  
+  <div id="catalogAdmin" class="grid"></div>
+</div>

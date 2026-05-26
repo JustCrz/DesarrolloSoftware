@@ -1,0 +1,128 @@
+/* ============================================================
+   7. CRYSTAL LOGIN & REGISTER - auth.css
+   ============================================================ */
+
+/* --- AUTH CONTAINER --- */
+#login, 
+#register, 
+.login-container {
+    max-width: 450px;
+    margin: 80px auto;
+    padding: 50px 40px;
+    background: linear-gradient(145deg, #1a1a1a, #0a0a0a); 
+    border-radius: 30px;
+    border: 1px solid rgba(212, 163, 115, 0.3); 
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+    text-align: center;
+    backdrop-filter: blur(10px);
+    position: relative;
+}
+
+/* Form header & subtitle */
+.login-header h2 {
+    font-family: 'Playfair Display', serif;
+    color: #ffffff;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.login-header p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 30px;
+}
+
+/* --- AUTH INPUT FIELDS --- */
+.login-body input {
+    width: 100%;
+    padding: 18px 25px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #333 !important;
+    border-radius: 15px !important;
+    color: white !important;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.login-body input:focus {
+    border-color: var(--accent) !important;
+    background: rgba(212, 163, 115, 0.05) !important;
+    box-shadow: 0 0 15px rgba(212, 163, 115, 0.2);
+}
+
+/* --- AUTH ACTION BUTTONS --- */
+.login-body .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-login {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #d4a373 0%, #b88655 100%) !important;
+    color: #000 !important;
+    border: none !important;
+    border-radius: 50px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.4s ease !important;
+}
+
+.btn-login:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(212, 163, 115, 0.4);
+    filter: brightness(1.1);
+}
+
+/* Cancel / secondary action buttons */
+.login-body button.secondary {
+    background: transparent !important;
+    color: #888 !important;
+    border: 1px solid #333 !important;
+    padding: 18px;
+    border-radius: 50px !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.login-body button.secondary:hover {
+    color: #fff !important;
+    border-color: #666 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* --- SUCCESS AND ERROR MESSAGES --- */
+p.error, 
+#loginMsg {
+    color: var(--error);
+    font-size: 0.85rem;
+    margin-top: 15px;
+}
+
+p.success, 
+#regMsg {
+    color: var(--success);
+    font-size: 0.85rem;
+    margin-top: 15px;
+}
+
+/* Decorative glowing top bar */
+.login-container::before {
+    content: '';
+    position: absolute;
+    top: -2px; 
+    left: 20%; 
+    right: 20%; 
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
