@@ -7,8 +7,10 @@ const app = express();
 
 // --- MIDDLEWARES ---
 const allowedOrigins = [
+  "http://127.0.0.1:5500", // El puerto de tu VS Code Live Server
   "http://localhost:5500",
-  "https://marjoriestore.vercel.app"
+  "http://127.0.0.1:3000",
+  "http://localhost:3000"
 ];
 
 app.use(cors({
@@ -20,7 +22,7 @@ app.use(cors({
     }
   },
   credentials: true
-})); // Permite la comunicación con el frontend (puerto 5500)
+})); // Permite la comunicación con el frontend (puerto 3306)
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
@@ -37,6 +39,7 @@ const salesRoutes   = require('./routes/sales');
 const providerRoutes = require('./routes/providers');
 const reportRoutes  = require('./routes/reports');
 const userRoutes    = require('./routes/users');
+const entregasRoutes = require('./routes/entregas');
 
 // --- CONFIGURACIÓN DE ENDPOINTS ---
 app.use('/api/auth', authRoutes);         
@@ -47,6 +50,7 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/providers', providerRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/entregas', entregasRoutes);
 
 // --- NUEVO ENDPOINT PARA NOTIFICACIONES ---
 // Este endpoint alimenta la campana de clientes y administrador
@@ -76,6 +80,18 @@ app.get('/api/notificaciones/:destino/:idUsuario', async (req, res) => {
 // Ruta de prueba
 app.get('/', (req, res) => {
   res.send('<h1>👗 Marjorie Store API en línea</h1>');
+});
+app.post('/api/notificaciones', async (req, res) => {
+  const { IdUsuario, Mensaje, Destino } = req.body;
+  try {
+    await pool.query(
+      'INSERT INTO notificaciones (IdUsuario, mensaje, Destino) VALUES (?, ?, ?)',
+      [IdUsuario, Mensaje, Destino]
+    );
+    res.json({ ok: true });
+  } catch(err) {
+    res.status(500).json({ ok: false, message: err.message });
+  }
 });
 
 // --- LANZAMIENTO DEL SERVIDOR ---

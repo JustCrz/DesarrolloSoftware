@@ -1218,10 +1218,26 @@ body .producto p:not(.precio) {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
-#checkout-button { /* o la clase que uses */
-    background-color: #ffffff; 
-    color: #000000;
-    padding: 10px 20px;
+#btnPagar {
+    background: linear-gradient(135deg, #d4a373 0%, #b88655 100%) !important;
+    color: #000 !important;
+    border: none !important;
+    padding: 18px 40px !important;
+    border-radius: 50px !important;
+    font-weight: 800 !important;
+    font-size: 1rem !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    margin-top: 10px !important;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 20px rgba(212, 163, 115, 0.4);
+}
+
+#btnPagar:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(212, 163, 115, 0.5);
 }
 
 /* Contenedor del progreso del pedido */

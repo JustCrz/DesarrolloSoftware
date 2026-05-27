@@ -16,7 +16,7 @@ async function getAllSales(req, res) {
             ORDER BY p.Fecha DESC
         `;
         const [rows] = await pool.query(query);
-        res.json({ ok: true, sales: rows });
+        res.json(rows);
     } catch (err) {
         console.error("Error en getAllSales:", err);
         res.status(500).json({ ok: false, message: 'Error al obtener ventas' });
@@ -90,7 +90,7 @@ async function createSale(req, res) {
 /**
  * 5. Lógica interna con Transacciones SQL y Notificación al Admin
  */
-async function processSaleInternally(IdCliente, productos) {
+async function processSaleInternally(IdCliente, productos, latitud = null, longitud = null) {
     let connection;
     try {
         connection = await pool.getConnection();
@@ -114,8 +114,8 @@ async function processSaleInternally(IdCliente, productos) {
         }
 
         const [pedidoRes] = await connection.query(
-            'INSERT INTO pedido (IdCliente, Fecha, Total, Estado) VALUES (?, NOW(), ?, ?)',
-            [IdCliente, totalVenta, '1'] 
+            'INSERT INTO pedido (IdCliente, Fecha, Total, Estado, Latitud, Longitud) VALUES (?, NOW(), ?, ?, ?, ?)',
+[IdCliente, totalVenta, '1', latitud, longitud]
         );
 
         const idPedido = pedidoRes.insertId;

@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});2
+});
 const upload = multer({ storage });
 
 // Definición de Rutas
@@ -21,6 +21,19 @@ router.get('/', productsController.getAllProducts);
 router.get('/with-providers', productsController.getProductsWithProviders);
 router.post('/', upload.single('Imagen'), productsController.addProduct); // Antes era createProduct
 router.put('/:id', upload.single('Imagen'), productsController.updateProduct);
+// Buscar productos por nombre (para el buscador de ofertas)
+router.get('/buscar', async (req, res) => {
+  const { q } = req.query;
+  try {
+    const [rows] = await require('../bd').query(
+      'SELECT IdProducto, Nombre, Precio, Stock, Imagen, EnPromocion, PrecioOferta FROM producto WHERE Nombre LIKE ?',
+      [`%${q}%`]
+    );
+    res.json({ ok: true, products: rows });
+  } catch(err) {
+    res.status(500).json({ ok: false, message: err.message });
+  }
+});
 router.delete('/:id', productsController.deleteProduct);
 
 module.exports = router;

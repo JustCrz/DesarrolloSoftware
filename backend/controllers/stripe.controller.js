@@ -35,8 +35,8 @@ async function createCheckoutSession(req, res) {
                 longitud: longitud || null
             },
            
-            success_url: 'http://localhost:3000/success.html',
-            cancel_url: 'http://localhost:3000/index.html', 
+           success_url: 'http://127.0.0.1:5500/frontend/success.html',
+        cancel_url: 'http://127.0.0.1:5500/frontend/index.html',
         });
 
         res.json({ id: session.id });

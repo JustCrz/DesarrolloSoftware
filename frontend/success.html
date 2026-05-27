@@ -3,27 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>¡Pago Exitoso!</title>
+    <title>¡Pago Exitoso! | Marjorie Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        .success-container { text-align: center; padding: 50px; margin-top: 50px; }
-        .success-icon { font-size: 80px; color: #28a745; }
-        .btn-home { background-color: #ff69b4; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; }
+        body { font-family: 'Inter', sans-serif; background-color: #000; color: white; }
+        .success-container { 
+            text-align: center; 
+            padding: 60px 20px; 
+            max-width: 500px; 
+            margin: 100px auto; 
+            border: 1px solid #333;
+            background: #111;
+        }
+        .success-icon { 
+            font-size: 80px; 
+            color: #ff69b4; 
+            margin-bottom: 20px;
+            animation: scaleIn 0.5s ease-out;
+        }
+        h1 { font-family: 'Playfair Display', serif; color: white; margin-bottom: 10px; }
+        p { color: #888; margin-bottom: 30px; }
+        
+        .btn-home { 
+            background-color: #ff69b4; 
+            color: white; 
+            padding: 15px 30px; 
+            border: none; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .btn-home:hover { 
+            transform: translateY(-3px);
+            background: #e0559a;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
     <div class="card success-container">
         <div class="success-icon">✔</div>
-        <h1>¡Gracias por tu compra!</h1>
-        <p>Tu pago ha sido procesado correctamente por Stripe.</p>
-        <br>
-        <a href="index.html" class="btn-home">Volver a la tienda</a>
+        <h1>¡Compra Exitosa!</h1>
+        <p>Tu pedido está siendo procesado. Recibirás un correo con los detalles en breve.</p>
+        
+        <a href="index.html" class="btn-home">Seguir Explorando</a>
+        
+        <p style="font-size: 0.8rem; margin-top: 40px; color: #444;">
+            Serás redirigido automáticamente en <span id="countdown">7</span> segundos...
+        </p>
     </div>
+
     <script>
-    // Limpia el carrito en el cliente si usas localStorage
-    localStorage.removeItem('carrito'); 
-    // Si el carrito es solo una variable global en script.js, 
-    // se reiniciará al volver al index.html.
+  const user = JSON.parse(localStorage.getItem('user'));
+  const carritoGuardado = JSON.parse(localStorage.getItem('carritoAntesPago') || '[]');
+
+  // Crear pedido en la BD
+  if (carritoGuardado.length > 0 && user) {
+    fetch('http://localhost:3000/api/sales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        IdCliente: user.IdCliente,
+        productos: carritoGuardado.map(i => ({
+          IdProducto: i.IdProducto,
+          Cantidad: i.Cantidad,
+          Precio: i.EnPromocion === 1 && i.PrecioOferta > 0 ? i.PrecioOferta : i.Precio
+        }))
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      console.log('Pedido creado:', data);
+      localStorage.removeItem('carritoAntesPago');
+      localStorage.removeItem('carrito');
+    })
+    .catch(err => console.error('Error:', err));
+  }
+
+  // Vaciar carrito en servidor
+  if (user && user.IdCliente) {
+    fetch(`http://localhost:3000/api/cart/${user.IdCliente}`, { method: 'DELETE' })
+      .catch(err => console.error("Error al limpiar carrito:", err));
+  }
+
+  // Temporizador
+  let seconds = 7;
+  const countdownEl = document.getElementById('countdown');
+  const timer = setInterval(() => {
+    seconds--;
+    countdownEl.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(timer);
+      window.location.href = 'index.html';
+    }
+  }, 1000);
 </script>
 </body>
 </html>

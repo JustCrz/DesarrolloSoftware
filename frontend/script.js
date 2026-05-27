@@ -1,4 +1,4 @@
-const API_BASE = 'https://desarrollosoftware.onrender.com';
+const API_BASE = 'http://localhost:3000';
 const stripe = Stripe('pk_test_51T8pDsFOBjDn2DDlWx88AjYqbf1NHYmfgppF5i4eIkJW65P70KQyD2INWT5YQo5FEXFDsOsFGOnBDvggkXp3E4vM00wyBe4HmE');
 /* ---------------- Datos locales ---------------- */
 let productos = [];
@@ -8,6 +8,7 @@ let carrito = [];
 let loggedUser = null;
 let mapaAdmin = null; 
 let marcadorAdmin = null;
+let productoSeleccionadoOferta = null;
 
 const estadosLogistica = {
     "1": "Pagado",
@@ -36,7 +37,17 @@ function showLanding(){ hideAll(); show('landing'); }
 function showLogin(){ hideAll(); show('login'); }
 function showRegister(){ hideAll(); show('register'); }
 function showCatalog(){ hideAll(); renderCatalog(); show('catalog'); }
-function showAdminPanel(){ hideAll(); show('adminPanel'); showAdminSection('inventario'); }
+function showAdminPanel() {
+  // Protección: solo admins
+  if (!loggedUser || loggedUser.role !== 'admin') {
+    alert('Acceso no autorizado');
+    showLanding();
+    return;
+  }
+  hideAll();
+  show('adminPanel');
+  showAdminSection('inventario');
+}
 
 function showAdminSection(section) {
   document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
@@ -51,28 +62,21 @@ function showAdminSection(section) {
       renderProveedores(); 
       break;
     case 'catalogo': 
-      show('adminCatalogo'); 
-      renderCatalogAdmin(); 
+      show('adminCatalogo');
+      renderOfertasActivas();
       break;
     case 'estadisticas': 
       show('adminEstadisticas'); 
       renderEstadisticas(); 
       break;
     case 'pedidos': 
-      show('adminOrders'); 
-      renderEntregasLogistica(); 
-      setTimeout(() => {
-        if (typeof mapaAdmin !== 'undefined' && mapaAdmin) {
-          mapaAdmin.invalidateSize();
-        } else {
-          mapaAdmin = L.map('mapaAdmin').setView([29.0892, -110.9612], 13);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaAdmin);
-        }
-      }, 300);
+      showAdminOrders(); 
       break; 
     case 'pagos':
       show('adminPagos');
+      renderPagos();
       break;
+      
   }
 }
 
@@ -81,42 +85,182 @@ function showAdminSection(section) {
 // Función para mostrar la lista de todos los pedidos (Solo Admin)
 async function showAdminOrders() {
     hideAll();
-    show('adminOrders'); 
+    show('adminPanel');
+    document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
+    show('adminOrders');
+
     const container = el('adminOrdersList');
-    if(!container) return;
-    
-    container.innerHTML = '<p style="text-align:center;">Cargando pedidos de la tienda...</p>';
+    if (!container) return;
+    container.innerHTML = '<p style="text-align:center; color: var(--accent); padding: 20px;">Cargando pedidos...</p>';
 
     try {
         const res = await fetch(`${API_BASE}/api/sales`);
         const ventas = await res.json();
 
-        if (ventas.length === 0) {
-            container.innerHTML = '<p style="text-align:center;">No hay pedidos registrados aún.</p>';
+        // Acepta tanto array directo como { sales: [] }
+        const lista = Array.isArray(ventas) ? ventas : (ventas.sales || []);
+
+        if (lista.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">No hay pedidos registrados.</p>';
             return;
         }
+        const nombresEstado = { '1': 'Pagado', '2': 'Preparando', '3': 'En Camino', '4': 'Entregado' };
+        const coloresEstado = { '1': '#d4a373', '2': '#3b82f6', '3': '#f59e0b', '4': '#22c55e' };
 
-        container.innerHTML = ventas.map(p => `
-            <div class="pedido-card" style="margin-bottom: 15px; padding: 20px; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid ${p.Estado === 'Entregado' ? '#2e7d32' : '#d4a373'};">
-                <div>
-                    <strong style="font-size: 1.1rem;">Orden #MS-${p.IdPedido}</strong> 
-                    <span style="margin-left:10px; font-size: 0.8rem; color: #666;">Cliente: ${p.NombreC}</span>
-                    <p style="margin: 5px 0 0 0; color: #888;">Estado actual: <b style="color: #333;">${p.Estado}</b></p>
-                </div>
-                <div style="text-align: right;">
-                    <button onclick="cambiarEstadoPedido(${p.IdPedido}, '${p.Estado}')" 
-                            style="background: #333; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">
-                        Avanzar Estado →
-                    </button>
+        container.innerHTML = lista.map(p => {
+            const estado = String(p.Estado);
+            const tieneGPS = p.Latitud && p.Longitud;
+            const urlGoogleMaps = tieneGPS
+                ? `https://www.google.com/maps?q=${p.Latitud},${p.Longitud}`
+                : '#';
+
+            return `
+            <div style="
+                background: #1a1a1a;
+                border: 1px solid #2a2a2a;
+                border-left: 4px solid ${coloresEstado[estado] || '#d4a373'};
+                border-radius: 12px;
+                padding: 16px;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                    
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                            <span style="color: #d4a373; font-weight: 700; font-size: 1rem;">
+                                #MS-${p.IdPedido}
+                            </span>
+                            <span style="
+                                background: ${coloresEstado[estado]}22;
+                                color: ${coloresEstado[estado]};
+                                font-size: 0.72rem;
+                                font-weight: 700;
+                                padding: 2px 8px;
+                                border-radius: 20px;
+                                border: 1px solid ${coloresEstado[estado]}44;
+                            ">
+                                ${nombresEstado[estado] || 'Desconocido'}
+                            </span>
+                        </div>
+
+                        <p style="margin: 0 0 4px; color: #ccc; font-size: 0.88rem;">
+                            👤 ${p.NombreC || 'Cliente'}
+                        </p>
+                        <p style="margin: 0 0 10px; color: #d4a373; font-weight: 700; font-size: 1rem;">
+                            $${parseFloat(p.Total || 0).toFixed(2)}
+                        </p>
+
+                        ${tieneGPS ? `
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button onclick="enfocarPedidoEnMapa(${p.Latitud}, ${p.Longitud}, '${p.NombreC || 'Cliente'}')"
+                                style="background: #1a1a1a; border: 1px solid #d4a373; color: #d4a373;
+                                       padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.78rem; font-weight: 600;">
+                                 Ver en mapa
+                            </button>
+                            <a href="${urlGoogleMaps}" target="_blank"
+                               style="background: #1a1a1a; border: 1px solid #4285F4; color: #4285F4;
+                                      padding: 5px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+                                      text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                 Google Maps
+                            </a>
+                        </div>
+                        ` : `
+                        <span style="font-size: 0.78rem; color: #555; font-style: italic;">📍 Sin ubicación GPS</span>
+                        `}
+                    </div>
+
+                    <!-- Selector de estado -->
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 130px;">
+                        <label style="font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 1px;">
+                            Estado
+                        </label>
+                        <select onchange="actualizarEstadoPedido(${p.IdPedido}, this.value, ${p.IdCliente || 'null'})"
+                            style="background: #111; color: white; border: 1px solid #d4a373;
+                                   padding: 7px 10px; border-radius: 8px; cursor: pointer;
+                                   font-size: 0.82rem; width: 100%;">
+                            <option value="1" ${estado === '1' ? 'selected' : ''}> Pagado</option>
+                            <option value="2" ${estado === '2' ? 'selected' : ''}> Preparando</option>
+                            <option value="3" ${estado === '3' ? 'selected' : ''}> En Camino</option>
+                            <option value="4" ${estado === '4' ? 'selected' : ''}> Entregado</option>
+                        </select>
+                    </div>
+
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
+
+        // Inicializar mapa
+        setTimeout(() => inicializarMapaAdmin(lista), 300);
+
     } catch (err) {
-        console.error("Error al cargar pedidos admin:", err);
-        container.innerHTML = '<p>Error al conectar con el servidor.</p>';
+        console.error("Error al cargar pedidos:", err);
+        container.innerHTML = '<p style="color: #ff4d4d; padding: 20px; text-align: center;"> Error al conectar con el servidor.</p>';
     }
 }
 
+function inicializarMapaAdmin(lista) {
+    const contenedor = el('mapaAdmin');
+    if (!contenedor) return;
+
+    // Si el mapa ya existe lo destruimos para evitar conflictos
+    if (mapaAdmin) {
+        mapaAdmin.remove();
+        mapaAdmin = null;
+    }
+
+    // Crear mapa centrado en Hermosillo
+    mapaAdmin = L.map('mapaAdmin').setView([29.0892, -110.9612], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(mapaAdmin);
+
+    // Icono personalizado dorado
+    const iconoDorado = L.divIcon({
+        html: `<div style="
+            background: #d4a373;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 6px rgba(212,163,115,0.8);
+        "></div>`,
+        className: '',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+    });
+
+    // Poner marcadores de todos los pedidos con GPS
+    const pedidosConGPS = lista.filter(p => p.Latitud && p.Longitud);
+    pedidosConGPS.forEach(p => {
+        L.marker([p.Latitud, p.Longitud], { icon: iconoDorado })
+            .addTo(mapaAdmin)
+            .bindPopup(`
+                <div style="font-family: sans-serif; min-width: 150px;">
+                    <b style="color: #d4a373;">#MS-${p.IdPedido}</b><br>
+                     ${p.NombreC || 'Cliente'}<br>
+                     $${parseFloat(p.Total || 0).toFixed(2)}<br>
+                     Estado: ${p.Estado}
+                </div>
+            `);
+    });
+
+    if (pedidosConGPS.length === 0) {
+        contenedor.insertAdjacentHTML('afterend',
+            '<p style="color:#555; font-size:0.8rem; text-align:center; margin-top:8px;">Sin pedidos con GPS registrado aún.</p>'
+        );
+    }
+}
+
+function enfocarPedidoEnMapa(lat, lng, nombre) {
+    if (!mapaAdmin) return;
+    mapaAdmin.flyTo([lat, lng], 16, { duration: 1.2 });
+
+    if (marcadorAdmin) mapaAdmin.removeLayer(marcadorAdmin);
+    marcadorAdmin = L.marker([lat, lng])
+        .addTo(mapaAdmin)
+        .bindPopup(`<b style="color:#d4a373;">Entrega: ${nombre}</b>`)
+        .openPopup();
+}
 // Función para actualizar el estado en la BD
 async function cambiarEstadoPedido(idPedido, estadoActual) {
     const estados = ['Pagado', 'Preparando', 'En Camino', 'Entregado'];
@@ -203,22 +347,24 @@ async function login() {
 
 function afterLogin() {
   el('loginMsg').textContent = '';
-  hideAll(); 
-  el('authButtons').classList.add('hidden'); 
+  hideAll();
+  el('authButtons').classList.add('hidden');
   el('btnLogout').classList.remove('hidden');
   el('notifContainer').classList.remove('hidden');
-  cargarNotificaciones(); // Llama a la función que busca mensajes en la BD
+  cargarNotificaciones();
 
   if (loggedUser.role === 'admin') {
-    el('btnCart').classList.add('hidden');     
-    el('btnHistorial').classList.add('hidden'); 
-    el('btnPerfil').classList.add('hidden'); 
-    show('adminPanel');                        
+    el('btnCart')?.classList.add('hidden');
+    el('btnHistorial')?.classList.add('hidden');
+    el('btnPerfil')?.classList.add('hidden');
+    el('btnGoAdmin')?.classList.remove('hidden'); // ESTE es el botón Panel Admin
+    show('adminPanel');
   } else {
-    el('btnCart').classList.remove('hidden');   
-    el('btnHistorial').classList.remove('hidden');
-    el('btnPerfil').classList.remove('hidden'); 
-    showCatalog(); 
+    el('btnCart')?.classList.remove('hidden');
+    el('btnHistorial')?.classList.remove('hidden');
+    el('btnPerfil')?.classList.remove('hidden');
+    el('btnGoAdmin')?.classList.add('hidden'); // cliente NO ve Panel Admin
+    showCatalog();
   }
 }
 
@@ -440,22 +586,21 @@ async function finalizarCompra() {
     alert('Tu carrito está vacío');
     return;
   }
-
   if (!loggedUser) {
     alert("Debes iniciar sesión para finalizar la compra");
     showLogin();
     return;
   }
 
+  // NUEVO: guardar carrito antes de salir a Stripe
+  localStorage.setItem('carritoAntesPago', JSON.stringify(carrito));
+
   try {
     showToast("Obteniendo tu ubicación para la entrega...");
     const coords = await obtenerUbicacionCliente();
-    
     loggedUser.latitud = coords.lat;
     loggedUser.longitud = coords.lng;
-
     handlePayment();
-
   } catch (error) {
     console.warn("No se obtuvo la ubicación:", error);
     if(confirm("No pudimos obtener tu ubicación GPS exacta. ¿Quieres continuar con la dirección de tu perfil?")) {
@@ -463,7 +608,6 @@ async function finalizarCompra() {
     }
   }
 }
-
 async function renderEntregasLogistica() {
   const container = el('adminOrdersList');
   if (!container) return;
@@ -472,8 +616,8 @@ async function renderEntregasLogistica() {
   try {
     const res = await fetch(`${API_BASE}/api/sales`);
     const data = await res.json();
-    const ventas = data.sales || [];
-    const todosLosPedidos = ventas; 
+    // Ajuste para aceptar tanto un array directo como un objeto con propiedad sales
+    const todosLosPedidos = Array.isArray(data) ? data : (data.sales || []); 
 
     if (todosLosPedidos.length === 0) {
       container.innerHTML = '<p style="padding:15px; color: #888;">No se encontraron pedidos en el sistema.</p>';
@@ -481,16 +625,17 @@ async function renderEntregasLogistica() {
     }
 
     container.innerHTML = todosLosPedidos.map(p => {
-      const nombreMostrar = p.NombreC || p.cliente || p.Nombre || "Cliente no identificado";
-      const tieneGPS = p.latitud && p.longitud;
-      const urlGoogleMaps = tieneGPS ? `https://www.google.com/maps?q=${p.latitud},${p.longitud}` : '#';
+      const nombreMostrar = p.NombreC || p.cliente || "Cliente";
+      // IMPORTANTE: Cambiado a Mayúsculas para coincidir con la BD
+      const tieneGPS = p.Latitud && p.Longitud; 
+      const urlGoogleMaps = tieneGPS ? `https://www.google.com/maps?q=${p.Latitud},${p.Longitud}` : '#';
 
       return `
         <div class="card-entrega" style="padding:15px; border-bottom:1px solid #333; background:#1a1a1a; margin-bottom:10px; border-radius:12px; color: white; border: 1px solid #2a2a2a;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px;">
             
             <div style="flex: 1;">
-              <div ${tieneGPS ? `onclick="enfocarPedidoEnMapa(${p.latitud}, ${p.longitud}, '${nombreMostrar}')"` : ''} 
+              <div ${tieneGPS ? `onclick="enfocarPedidoEnMapa(${p.Latitud}, ${p.Longitud}, '${nombreMostrar}')"` : ''} 
                    style="${tieneGPS ? 'cursor:pointer;' : 'cursor:default;'}">
                   <strong style="color:#d4a373; font-size: 1.1rem;">Orden #MS-${p.IdPedido}</strong><br>
                   <span style="font-size: 0.9rem; color: #eee;">👤 ${nombreMostrar}</span>
@@ -508,7 +653,7 @@ async function renderEntregasLogistica() {
 
             <div style="text-align: right; min-width: 120px;">
                 <label style="display:block; font-size: 0.7rem; color: #888; margin-bottom: 4px;">Estado del envío:</label>
-                <select onchange="actualizarEstadoPedido(${p.IdPedido}, this.value)" 
+                <select onchange="actualizarEstadoPedido(${p.IdPedido}, this.value, ${p.IdCliente})" 
                         style="background:#222; color:white; border:1px solid #d4a373; padding:6px; border-radius:6px; cursor: pointer; font-size: 0.85rem; width: 100%;">
                     <option value="1" ${p.Estado == '1' ? 'selected' : ''}> Pagado</option>
                     <option value="2" ${p.Estado == '2' ? 'selected' : ''}> Preparando</option>
@@ -516,14 +661,13 @@ async function renderEntregasLogistica() {
                     <option value="4" ${p.Estado == '4' ? 'selected' : ''}> Entregado</option>
                 </select>
             </div>
-
           </div>
         </div>
       `;
     }).join('');
 
   } catch (err) {
-    console.error("Error:", err);
+    console.error("Error en renderEntregasLogistica:", err);
     container.innerHTML = '<p style="padding:15px; color: #ff4d4d;"> Error de conexión.</p>';
   }
 }
@@ -572,32 +716,36 @@ function abrirModalProducto(id) {
   const nombreImagen = p.Imagen ? p.Imagen.replace(/^(\/)?uploads\//, '') : '';
   const urlFinal = `${API_BASE}/uploads/${nombreImagen}`;
 
-  const controlesCompra = loggedUser ? `
+  const controlesCompra = (loggedUser && loggedUser.role !== 'admin') ? `
     <div class="selection-group" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
       <label>Talla:</label>
       <select id="modalTalla" class="modern-select">
         <option value="M">Talla M</option>
         <option value="L">Talla L</option>
       </select>
-      
       <label>Cantidad:</label>
       <input type="number" id="modalCantidad" value="1" min="1" max="${p.Stock}" class="modern-input">
-      
       <button class="btn-add-modal" onclick="addToCartFromModal(${p.IdProducto})" style="width:100%; margin-top:10px;">
         Agregar al carrito
       </button>
     </div>
-  ` : `
+` : (loggedUser && loggedUser.role === 'admin') ? `
+    <div style="margin-top: 15px; padding: 15px; background: #1a1a1a; border-radius: 10px; text-align: center; border: 1px solid #d4a373;">
+      <p style="color: #d4a373; font-weight: bold; margin: 0;">
+        Vista previa del administrador
+      </p>
+      <small style="color: #666;">Los administradores no pueden realizar compras</small>
+    </div>
+` : `
     <div style="margin-top: 15px; padding: 15px; background: #fff5f5; border-radius: 10px; text-align: center;">
       <p style="color: #ff3e3e; font-weight: bold; margin: 0;">
-         Inicia sesión para elegir tu talla y comprar
+        Inicia sesión para elegir tu talla y comprar
       </p>
       <button onclick="cerrarModal(); showLogin();" style="background: none; border: none; color: var(--accent); text-decoration: underline; cursor: pointer; margin-top: 5px;">
         Ir al Login ahora
       </button>
     </div>
-  `;
-
+`;
   modalBody.innerHTML = `
     <div class="modal-product-layout">
       <button class="close-modal" onclick="cerrarModal()">×</button>
@@ -639,14 +787,18 @@ function addToCartFromModal(id) {
     return;
   }
 
-  // objeto con la personalización
+  // CORRECCIÓN: usar precio de oferta si está en promoción
+  const precioFinal = (p.EnPromocion == 1 && p.PrecioOferta > 0) 
+    ? p.PrecioOferta 
+    : p.Precio;
+
   const item = {
     ...p,
+    Precio: precioFinal,
     Cantidad: cantidad,
-    TallaSeleccionada: talla 
+    TallaSeleccionada: talla
   };
 
-  // Lógica para añadir al carrito
   const existente = carrito.find(i => i.IdProducto === id && i.TallaSeleccionada === talla);
   if (existente) {
     existente.Cantidad += cantidad;
@@ -654,11 +806,10 @@ function addToCartFromModal(id) {
     carrito.push(item);
   }
 
-  p.Stock -= cantidad; // Reducimos el stock
-  
-  cerrarModal(); // Se cierra la ventana
-  showToast(`${p.Nombre} (${talla}) agregado al carrito`);
-  renderCarrito(); // Actualizacion de la vista del carrito
+  p.Stock -= cantidad;
+  cerrarModal();
+  showToast(`${p.Nombre} (${talla}) agregado - $${precioFinal}`);
+  renderCarrito();
 }
 
 function cerrarModal() {
@@ -935,116 +1086,105 @@ function renderCatalogAdmin(){
 /* ---------------- Admin: Dashboard de Estadísticas ---------------- */
 async function renderEstadisticas() {
   try {
-    //  Cargar el Producto Más Vendido 
-    const resEstrella = await fetch(`${API_BASE}/api/reports/top-product`);
-    const dataEstrella = await resEstrella.json();
-
-    const contCliente = el('infoEstrellaCliente');
-    const contAdmin = el('productoEstrellaContenedor');
-
-    if (dataEstrella.ok && dataEstrella.producto) {
-      const imgNombre = dataEstrella.producto.Imagen ? dataEstrella.producto.Imagen.replace('uploads/', '') : '';
-      const urlImg = `${API_BASE}/uploads/${imgNombre}`;
-      if (contCliente) {
-        contCliente.innerHTML = `
-          <img src="${urlImg}" onerror="this.src='https://via.placeholder.com/300'">
-          <div>
-            <small style="text-transform:uppercase; letter-spacing:2px; color:#d4a373; font-weight:bold;">★ MÁS VENDIDO</small>
-            <strong>${dataEstrella.producto.prenda}</strong>
-            <span>Esta es la prenda favorita de nuestra comunidad. ¡No te quedes sin la tuya!</span>
-            <p style="margin-top:10px;"> Unidades vendidas: <b>${dataEstrella.producto.unidades_vendidas}</b></p>
-            <button class="btn-estrella-action" onclick="abrirModalProducto(${dataEstrella.producto.IdProducto})">
-                Ver Detalles y Comprar
-            </button>
-          </div>
-        `;
-      }
-
-      //  Diseño para el Admin
-      if (contAdmin) {
-        contAdmin.innerHTML = `
-          <div style="display:flex; align-items:center; gap:20px; width:100%;">
-            <img src="${urlImg}" style="width:80px; height:80px; object-fit:cover; border-radius:12px; border:2px solid #fff; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
-            <div style="flex:1;">
-              <h4 style="margin:0; color:#1a1a1a; font-size:1.1rem;">${dataEstrella.producto.prenda}</h4>
-              <div style="display:flex; gap:15px; margin-top:5px; font-size:0.9rem;">
-                <span> Vendidos: <b>${dataEstrella.producto.unidades_vendidas}</b></span>
-                <span style="color:green; font-weight:bold;"> $${dataEstrella.producto.total_generado}</span>
-              </div>
-            </div>
-          </div>
-        `;
-      }
+    // Resumen del día
+    const resDay = await fetch(`${API_BASE}/api/reports/daily-summary`);
+    const dataDay = await resDay.json();
+    if (dataDay.ok) {
+      el('statVentasHoy').textContent = `$${parseFloat(dataDay.datos.ingresos_sucios || 0).toFixed(2)}`;
+      el('statPedidosHoy').textContent = `${dataDay.datos.total_pedidos || 0} pedidos`;
     }
-    // Cargar Resumen de Ventas (Dashboards)
-    const resVentas = await fetch(`${API_BASE}/api/reports/daily-summary`);
+
+    // Producto estrella
+    const resTop = await fetch(`${API_BASE}/api/reports/top-product`);
+    const dataTop = await resTop.json();
+    if (dataTop.ok && dataTop.producto) {
+      el('statProductoEstrella').textContent = dataTop.producto.prenda;
+      el('statUnidadesEstrella').textContent = `${dataTop.producto.unidades_vendidas} unidades vendidas`;
+    }
+
+    // Stock crítico
+    const criticos = productos.filter(p => p.Stock < 5);
+    el('statCantidadCriticos').textContent = criticos.length;
+    const listaCriticos = el('listaStockCritico');
+    if (listaCriticos) {
+      listaCriticos.innerHTML = criticos.length === 0
+        ? '<p style="color:#4CAF50; font-size:0.85rem;">Todo el stock está en niveles óptimos.</p>'
+        : criticos.map(p => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px;">
+            <span style="color:#fff; font-size:0.9rem;">${p.Nombre}</span>
+            <span style="color:#ff4d4d; font-weight:800; font-size:0.85rem;">Quedan: ${p.Stock}</span>
+          </div>
+        `).join('');
+    }
+
+    // Últimas ventas
+    const resVentas = await fetch(`${API_BASE}/api/sales`);
     const dataVentas = await resVentas.json();
-
-    if (dataVentas.ok) {
-        el('dashIngresosPeriodo').textContent = `$${dataVentas.datos.ingresos_sucios || 0}`;
-        el('dashPedidosPeriodo').textContent = dataVentas.datos.total_pedidos || 0;
+    const ventas = Array.isArray(dataVentas) ? dataVentas : (dataVentas.sales || []);
+    const listaV = el('listaVentasHistorial');
+    if (listaV) {
+      listaV.innerHTML = ventas.slice(0, 8).map(v => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px;">
+          <div>
+            <span style="color:#d4a373; font-weight:700; font-size:0.9rem;">#MS-${v.IdPedido}</span>
+            <span style="color:#888; font-size:0.8rem; margin-left:8px;">${v.NombreC || 'Cliente'}</span>
+          </div>
+          <div style="text-align:right;">
+            <span style="color:#fff; font-weight:800;">$${parseFloat(v.Total).toFixed(2)}</span>
+            <span style="display:block; color:#555; font-size:0.7rem;">${new Date(v.Fecha).toLocaleDateString()}</span>
+          </div>
+        </div>
+      `).join('');
     }
 
-    // Cargar historial en el panel admin (Últimas 5 ventas)
-    const resHistorial = await fetch(`${API_BASE}/api/sales`);
-    const dataHistorial = await resHistorial.json();
-    const listaH = el('listaVentasHistorial');
-    listaH.innerHTML = '';
-    
-    const ventas = Array.isArray(dataHistorial) ? dataHistorial : (dataHistorial.pedidos || []);
-    
-    ventas.slice(0, 5).forEach(v => {
-        const div = document.createElement('div');
-        div.className = 'pago-item'; 
-        div.innerHTML = `
-          <div style="display:flex; flex-direction:column;">
-            <span style="font-weight:600; color:#333;">${v.NombreC || 'Cliente'}</span>
-            <small style="color:#888;">${new Date().toLocaleDateString()}</small> 
-          </div>
-          <span style="font-weight:bold; color:var(--accent); font-size:1.1rem;">$${v.Total}</span>
-        `;
-        listaH.appendChild(div);
-    });
-
-  } catch (err) {
-    console.error("Error en Dashboard:", err);
+  } catch(err) {
+    console.error('Error en reportes:', err);
   }
 }
 
 /*------------------ Admin: Pagos realizados --------------------*/
 async function renderPagos() {
   const container = el('pagosLista');
-  const totalEl = el('totalPagos');
-  container.innerHTML = '';
-  totalEl.textContent = 'Total de pagos: $0';
+  if (!container) return;
+  container.innerHTML = '<p style="color:#555; text-align:center; padding:20px;">Cargando pagos...</p>';
 
   try {
     const res = await fetch(`${API_BASE}/api/sales`);
-    const pagos = await res.json(); 
+    const data = await res.json();
+    const ventas = Array.isArray(data) ? data : (data.sales || []);
 
-    if(!Array.isArray(pagos) || pagos.length === 0) {
-      container.innerHTML = '<p>No hay pagos registrados</p>';
+    if (ventas.length === 0) {
+      container.innerHTML = '<p style="color:#555; text-align:center; padding:20px;">No hay pagos registrados.</p>';
       return;
     }
 
     let total = 0;
-    pagos.forEach(p => {
-      total += parseFloat(p.Total || 0); 
-      
-      const div = document.createElement('div');
-      div.className = 'pago-item';
-      div.textContent = `${new Date(p.Fecha).toLocaleDateString()} - Cliente: ${p.NombreC || 'N/A'} - Total: $${p.Total}`;
-      
-      container.appendChild(div);
-    });
+    ventas.forEach(v => total += parseFloat(v.Total || 0));
 
-    totalEl.textContent = `Total de pagos: $${total.toFixed(2)}`;
-  } catch (err) {
+    el('pagosTotalRecaudado').textContent = `$${total.toFixed(2)}`;
+    el('pagosCompletados').textContent = ventas.length;
+
+    container.innerHTML = ventas.map(v => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:12px;">
+        <div style="display:flex; align-items:center; gap:15px;">
+          <div style="width:40px; height:40px; background:#1a3a5c; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">💳</div>
+          <div>
+            <p style="margin:0; color:#fff; font-weight:700;">#MS-${v.IdPedido}</p>
+            <p style="margin:3px 0 0; color:#888; font-size:0.8rem;">${v.NombreC || 'Cliente'} · ${new Date(v.Fecha).toLocaleDateString()}</p>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <p style="margin:0; color:#d4a373; font-weight:800; font-size:1.1rem;">$${parseFloat(v.Total).toFixed(2)}</p>
+          <span style="background:#22c55e22; color:#22c55e; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:20px;">Stripe · Completado</span>
+        </div>
+      </div>
+    `).join('');
+
+  } catch(err) {
     console.error(err);
-    container.innerHTML = '<p>Error al cargar los pagos</p>';
+    container.innerHTML = '<p style="color:#ff4d4d; text-align:center;">Error al cargar pagos.</p>';
   }
 }
-
 /* ---------------- Toast ---------------- */
 function showToast(msg){ const t=el('cartMessage'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2000); }
 
@@ -1187,20 +1327,6 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
-topProducts.forEach(p => {
-  const card = document.createElement('article');
-  card.className = 'producto';
-  
-  const urlFinal = `${API_BASE}/uploads/${p.Imagen.replace('uploads/', '')}`;
-
-  card.innerHTML = `
-    <img src="${urlFinal}" alt="${p.Nombre}" onerror="this.src='https://via.placeholder.com/200'">
-    <h3>${p.Nombre}</h3>
-    <p>$${p.Precio}</p>
-    <button onclick="validarAccesoDetalle(${p.IdProducto})">Ver detalles</button>
-  `;
-  container.appendChild(card);
-});
 
 // validación
 function validarAccesoDetalle(id) {
@@ -1465,7 +1591,7 @@ async function actualizarEstadoPedido(idPedido, nuevoEstado, idCliente) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 nuevoEstado, 
-                idCliente // <-- IMPORTANTE: Enviamos esto al backend
+                idCliente // Se envía para insertar en la tabla de notificaciones
             }) 
         });
 
@@ -1475,22 +1601,9 @@ async function actualizarEstadoPedido(idPedido, nuevoEstado, idCliente) {
             const nombreEstado = estadosLogistica[nuevoEstado] || "Actualizado";
             showToast(`✅ Orden #${idPedido} actualizada a: ${nombreEstado}`);
 
-            // RE-RENDERIZADO CRÍTICO:
-            // Esto actualiza la lista de logística (el mapa y las tarjetas del admin)
-            if (typeof renderEntregasLogistica === 'function') {
-                await renderEntregasLogistica(); 
-            }
-            
-            // Esto actualiza los números del Dashboard (ingresos, pedidos del periodo)
-            if (typeof renderEstadisticas === 'function') {
-                renderEstadisticas(); 
-            }
-
-            // Notificación visual en la campana del Admin
-            if (typeof agregarNotificacion === 'function') {
-                agregarNotificacion(`Orden #${idPedido} pasó a: ${nombreEstado}`);
-            }
-
+            // Refrescamos toda la vista del admin para ver los cambios
+            await renderEntregasLogistica(); 
+            renderEstadisticas(); 
         } else {
             alert("❌ Error: " + (data.message || "No se pudo actualizar."));
         }
@@ -1499,7 +1612,6 @@ async function actualizarEstadoPedido(idPedido, nuevoEstado, idCliente) {
         showToast("❌ Error de conexión con el servidor.");
     }
 }
-
 function enviarNotificacion(mensaje, tipo = 'info') {
     const list = el('notiList');
     if (!list) return;
@@ -1566,13 +1678,17 @@ function toggleNotiBox() {
     // Si la abrimos, podrías marcar como leídas (opcional)
 }
 
-// Buscar notificaciones en la base de datos
 async function cargarNotificaciones() {
-    const user = JSON.parse(localStorage.getItem('usuario')); // O como guardes tu sesión
-    if (!user) return;
+    // Buscamos 'user' porque así lo guardas en la función login()
+    const session = localStorage.getItem('user'); 
+    if (!session) return;
+    
+    const user = JSON.parse(session);
+    const destino = user.role === 'admin' ? 'admin' : 'cliente';
+    // Usamos IdCliente que es el nombre de tu columna en MySQL
+    const userId = user.IdCliente || user.id; 
 
-    const destino = user.rol === 'admin' ? 'admin' : 'cliente';
-    const url = `${API_BASE}/api/notificaciones/${destino}/${user.id}`;
+    const url = `${API_BASE}/api/notificaciones/${destino}/${userId}`;
 
     try {
         const res = await fetch(url);
@@ -1584,18 +1700,21 @@ async function cargarNotificaciones() {
             
             if (data.notificaciones.length > 0) {
                 count.innerText = data.notificaciones.length;
-                count.style.display = 'block';
+                count.style.display = 'flex';
                 
                 lista.innerHTML = data.notificaciones.map(n => `
-                    <div style="padding: 10px; border-bottom: 1px solid #222; font-size: 0.85rem;">
-                        <p style="margin:0; color: white;">${n.Mensaje}</p>
-                        <small style="color: #666;">${new Date(n.Fecha).toLocaleString()}</small>
-                    </div>
-                `).join('');
+    <div style="padding: 12px; border-bottom: 1px solid #333; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px;">
+        <p style="margin:0; color: #d4a373; font-weight: bold; font-size: 0.85rem;">${n.mensaje}</p>
+        <small style="color: #666; font-size: 0.7rem;">${new Date(n.Fecha).toLocaleString()}</small>
+    </div>
+`).join('');
+            } else {
+                lista.innerHTML = '<p style="color:gray; text-align:center; padding:10px;">No tienes notificaciones.</p>';
+                count.style.display = 'none';
             }
         }
     } catch (err) {
-        console.log("Error al cargar notificaciones");
+        console.log("Error al cargar notificaciones de la BD");
     }
 }
 
@@ -1613,12 +1732,11 @@ async function abrirModalAjusteStock() {
     document.getElementById('modalAjusteStock').classList.remove('hidden');
 }
 
-// Enviar la nueva cantidad al servidor
 async function confirmarAjusteStock() {
     const idProducto = document.getElementById('selectProductoStock').value;
     const cantidadNueva = document.getElementById('inputNuevaCantidad').value;
 
-    if (!cantidadNueva) return alert("Ingresa una cantidad");
+    if (!cantidadNueva || cantidadNueva < 0) return alert("Ingresa una cantidad válida");
 
     try {
         const res = await fetch(`${API_BASE}/api/sales/adjust-stock`, {
@@ -1629,11 +1747,249 @@ async function confirmarAjusteStock() {
 
         const data = await res.json();
         if (data.ok) {
-            alert("✅ Stock actualizado");
+            alert("✅ Stock actualizado exitosamente");
             document.getElementById('modalAjusteStock').classList.add('hidden');
-            if (typeof renderAdminProducts === 'function') renderAdminProducts(); // Recargar lista
+            
+            // RE-RENDERIZADO: Esto es lo que actualiza la pantalla del admin
+            await cargarProductos(); // Recarga los datos del servidor
+            renderAdminList();       // Actualiza la lista simple
+            renderCatalogAdmin();    // Actualiza la lista con fotos
         }
     } catch (err) {
-        alert("Error al actualizar stock");
+        console.error("Error al ajustar stock:", err);
+        alert("Hubo un error al conectar con el servidor.");
     }
+}
+function resetFormProducto() {
+  el('formProducto').reset();
+  editingId = null;
+  el('idProductoEdit').value = '';
+}
+
+// ============ SISTEMA DE OFERTAS ADMIN ============
+
+async function buscarProductoParaOferta(query) {
+  const container = el('resultadosBusquedaOferta');
+  if (!query || query.length < 2) { container.innerHTML = ''; return; }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/products/buscar?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    const lista = data.products || [];
+
+    if (lista.length === 0) {
+      container.innerHTML = '<p style="color:#555; font-size:0.85rem;">Sin resultados.</p>';
+      return;
+    }
+
+    container.innerHTML = lista.map(p => {
+      const nombreImg = p.Imagen ? p.Imagen.replace(/^(\/)?uploads\//, '') : '';
+      const urlImg = `${API_BASE}/uploads/${nombreImg}`;
+      return `
+        <div onclick="seleccionarProductoOferta(${p.IdProducto})"
+          style="display:flex; align-items:center; gap:12px; padding:12px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:10px; cursor:pointer; transition:0.2s;"
+          onmouseover="this.style.borderColor='#d4a373'" onmouseout="this.style.borderColor='#2a2a2a'">
+          <img src="${urlImg}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;">
+          <div>
+            <strong style="color:#fff;">${p.Nombre}</strong>
+            <p style="margin:2px 0 0; color:#888; font-size:0.8rem;">
+              Precio: $${p.Precio} | Stock: ${p.Stock}
+              ${p.EnPromocion == 1 ? '<span style="color:#d4a373; margin-left:8px;">⚡ En oferta</span>' : ''}
+            </p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(err) {
+    console.error('Error al buscar:', err);
+  }
+}
+
+function seleccionarProductoOferta(id) {
+  const p = productos.find(x => x.IdProducto === id);
+  if (!p) return;
+
+  productoSeleccionadoOferta = p;
+
+  const nombreImg = p.Imagen ? p.Imagen.replace(/^(\/)?uploads\//, '') : '';
+  el('ofertaIdProducto').value = p.IdProducto;
+  el('ofertaImgProducto').src = `${API_BASE}/uploads/${nombreImg}`;
+  el('ofertaNombreProducto').textContent = p.Nombre;
+  el('ofertaPrecioOriginal').textContent = `Precio original: $${p.Precio}`;
+  el('ofertaPrecioNuevo').value = p.PrecioOferta || '';
+  el('ofertaFechaFin').value = p.FechaFinPromo ? p.FechaFinPromo.slice(0, 16) : '';
+
+  show('formOfertaContainer');
+  el('resultadosBusquedaOferta').innerHTML = '';
+  el('buscarProductoOferta').value = p.Nombre;
+}
+
+async function guardarOferta() {
+  const id = el('ofertaIdProducto').value;
+  const precioOferta = parseFloat(el('ofertaPrecioNuevo').value);
+  const fechaFin = el('ofertaFechaFin').value;
+  const fechaInicio = el('ofertaFechaInicio').value;
+
+  if (!precioOferta || precioOferta <= 0) return alert('Ingresa un precio de oferta válido');
+  if (!fechaFin) return alert('Ingresa la fecha de fin de la promoción');
+
+  try {
+    const formData = new FormData();
+    const p = productoSeleccionadoOferta;
+    formData.append('Nombre', p.Nombre);
+    formData.append('Categoria', p.Categoria || '');
+    formData.append('Talla', p.Talla || '');
+    formData.append('Color', p.Color || '');
+    formData.append('Precio', p.Precio);
+    formData.append('Stock', p.Stock);
+    formData.append('EnPromocion', 1);
+    formData.append('PrecioOferta', precioOferta);
+    formData.append('FechaFinPromo', fechaFin);
+
+    const res = await fetch(`${API_BASE}/api/products/${id}`, {
+      method: 'PUT',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      // Notificar a todos los clientes
+      await notificarOfertaClientes(p.Nombre, precioOferta, p.Precio);
+      
+      showToast(`¡Oferta activada para ${p.Nombre}!`);
+      await cargarProductos();
+      renderOfertasActivas();
+      hide('formOfertaContainer');
+      el('buscarProductoOferta').value = '';
+    }
+  } catch(err) {
+    console.error(err);
+    alert('Error al guardar la oferta');
+  }
+}
+
+async function quitarOferta() {
+  const id = el('ofertaIdProducto').value;
+  const p = productoSeleccionadoOferta;
+  if (!confirm(`¿Quitar el descuento de "${p.Nombre}"?`)) return;
+
+  try {
+    const formData = new FormData();
+    formData.append('Nombre', p.Nombre);
+    formData.append('Categoria', p.Categoria || '');
+    formData.append('Talla', p.Talla || '');
+    formData.append('Color', p.Color || '');
+    formData.append('Precio', p.Precio);
+    formData.append('Stock', p.Stock);
+    formData.append('EnPromocion', 0);
+    formData.append('PrecioOferta', 0);
+    formData.append('FechaFinPromo', '');
+
+    await fetch(`${API_BASE}/api/products/${id}`, { method: 'PUT', body: formData });
+    showToast(`Descuento quitado de ${p.Nombre}`);
+    await cargarProductos();
+    renderOfertasActivas();
+    hide('formOfertaContainer');
+    el('buscarProductoOferta').value = '';
+  } catch(err) {
+    alert('Error al quitar la oferta');
+  }
+}
+
+async function notificarOfertaClientes(nombreProducto, precioOferta, precioOriginal) {
+  try {
+    // Obtener todos los clientes
+    const res = await fetch(`${API_BASE}/api/users`);
+    const data = await res.json();
+    const clientes = data.users || [];
+
+    // Insertar notificación para cada cliente
+    await Promise.all(clientes.map(c =>
+      fetch(`${API_BASE}/api/notificaciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          IdUsuario: c.IdCliente,
+          Mensaje: `⚡ ¡"${nombreProducto}" está en promoción! De $${precioOriginal} → $${precioOferta}. ¡No te lo pierdas!`,
+          Destino: 'cliente'
+        })
+      })
+    ));
+  } catch(err) {
+    console.error('Error al notificar clientes:', err);
+  }
+}
+ 
+function renderOfertasActivas() {
+  const container = el('listaOfertasActivas');
+  if (!container) return;
+
+  const enOferta = productos.filter(p => p.EnPromocion == 1 && p.PrecioOferta > 0);
+
+  if (enOferta.length === 0) {
+    container.innerHTML = '<p style="color:#555; font-size:0.85rem; grid-column:1/-1;">No hay ofertas activas.</p>';
+    return;
+  }
+
+  container.innerHTML = enOferta.map(p => {
+    const nombreImg = p.Imagen ? p.Imagen.replace(/^(\/)?uploads\//, '') : '';
+    const urlImg = `${API_BASE}/uploads/${nombreImg}`;
+    const descuento = Math.round(((p.Precio - p.PrecioOferta) / p.Precio) * 100);
+
+    return `
+      <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:16px; overflow:hidden; position:relative;">
+        <div style="position:absolute; top:10px; left:10px; background:#ff3e3e; color:white; font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:20px;">
+          -${descuento}%
+        </div>
+        <img src="${urlImg}" style="width:100%; height:160px; object-fit:cover;"
+             onerror="this.src='https://placehold.co/300x160/1a1a1a/d4a373?text=Sin+Imagen'">
+        <div style="padding:15px;">
+          <h4 style="margin:0 0 8px; color:#fff;">${p.Nombre}</h4>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <span style="color:#d4a373; font-size:1.2rem; font-weight:800;">$${p.PrecioOferta}</span>
+            <span style="color:#666; text-decoration:line-through; font-size:0.9rem;">$${p.Precio}</span>
+          </div>
+          ${p.FechaFinPromo ? `
+          <div id="timer_${p.IdProducto}" style="font-size:0.78rem; color:#888; margin-bottom:10px;">
+            ⏱ Calculando...
+          </div>` : ''}
+          <button onclick="seleccionarProductoOferta(${p.IdProducto})"
+            style="width:100%; background:transparent; border:1px solid #d4a373; color:#d4a373; padding:8px; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.8rem;">
+            Editar Oferta
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Iniciar contadores
+  enOferta.forEach(p => {
+    if (p.FechaFinPromo) iniciarContador(p.IdProducto, p.FechaFinPromo);
+  });
+}
+
+function iniciarContador(idProducto, fechaFin) {
+  const el_timer = document.getElementById(`timer_${idProducto}`);
+  if (!el_timer) return;
+
+  const fin = new Date(fechaFin).getTime();
+
+  const interval = setInterval(() => {
+    const ahora = new Date().getTime();
+    const diff = fin - ahora;
+
+    if (diff <= 0) {
+      el_timer.textContent = '⏱ Oferta expirada';
+      el_timer.style.color = '#ff4d4d';
+      clearInterval(interval);
+      return;
+    }
+
+    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const segs = Math.floor((diff % (1000 * 60)) / 1000);
+
+    el_timer.innerHTML = `⏱ Termina en: <b style="color:#d4a373;">${dias}d ${horas}h ${mins}m ${segs}s</b>`;
+  }, 1000);
 }
