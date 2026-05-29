@@ -5,7 +5,6 @@ const path = require('path');
 const fs = require('fs');
 const productsController = require('../controllers/products.controller');
 
-// Configuración de Multer (ruta/middleware)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = path.join(__dirname, '..', 'uploads');
@@ -16,12 +15,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Definición de Rutas
 router.get('/', productsController.getAllProducts);
-router.get('/with-providers', productsController.getProductsWithProviders);
-router.post('/', upload.single('Imagen'), productsController.addProduct); // Antes era createProduct
-router.put('/:id', upload.single('Imagen'), productsController.updateProduct);
-// Buscar productos por nombre (para el buscador de ofertas)
 router.get('/buscar', async (req, res) => {
   const { q } = req.query;
   try {
@@ -34,6 +28,9 @@ router.get('/buscar', async (req, res) => {
     res.status(500).json({ ok: false, message: err.message });
   }
 });
+router.get('/with-providers', productsController.getProductsWithProviders);
+router.post('/', upload.single('Imagen'), productsController.addProduct);
+router.put('/:id', upload.single('Imagen'), productsController.updateProduct);
 router.delete('/:id', productsController.deleteProduct);
 
 module.exports = router;

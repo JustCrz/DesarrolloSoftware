@@ -1,7 +1,7 @@
-//const API_BASE = 'http://localhost:3000';
-const API_BASE = 'https://desarrollosoftware.onrender.com';
-const stripe = Stripe('pk_test_51T9FMCAuz5OrtKFT0wnEX0niDHjIfkaXG6FnIER897RI9Xg30mYG14QJHc4S8B8DBu2UgQnpnwTjhxJqPyuMu9mO00yFEC18Tn');
-//const stripe = Stripe('pk_test_51T8pDsFOBjDn2DDlWx88AjYqbf1NHYmfgppF5i4eIkJW65P70KQyD2INWT5YQo5FEXFDsOsFGOnBDvggkXp3E4vM00wyBe4HmE');
+const API_BASE = 'http://localhost:3000';
+//const API_BASE = 'https://desarrollosoftware.onrender.com';
+//const stripe = Stripe('pk_test_51T9FMCAuz5OrtKFT0wnEX0niDHjIfkaXG6FnIER897RI9Xg30mYG14QJHc4S8B8DBu2UgQnpnwTjhxJqPyuMu9mO00yFEC18Tn');
+const stripe = Stripe('pk_test_51T8pDsFOBjDn2DDlWx88AjYqbf1NHYmfgppF5i4eIkJW65P70KQyD2INWT5YQo5FEXFDsOsFGOnBDvggkXp3E4vM00wyBe4HmE');
 /* ---------------- Datos locales ---------------- */
 let productos = [];
 let proveedores = [];
@@ -427,31 +427,81 @@ async function register() {
   }
 }
 
-function renderCatalog() {
-  const container = el('catalogGrid'); 
+function renderCatalog(filtro = '') {
+  const container = el('catalogGrid');
   if (!container) return;
   container.innerHTML = '';
 
-  productos.forEach(p => {
+  const texto = filtro.toLowerCase();
+  const productosFiltrados = texto
+    ? productos.filter(p =>
+        p.Nombre.toLowerCase().includes(texto) ||
+        (p.Categoria || '').toLowerCase().includes(texto) ||
+        (p.Color || '').toLowerCase().includes(texto)
+      )
+    : productos;
+
+  if (productosFiltrados.length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:#888; grid-column:1/-1; padding:40px;">No se encontraron productos.</p>';
+    return;
+  }
+
+  productosFiltrados.forEach(p => {
     const card = document.createElement('article');
     card.className = 'producto';
-    
-    // MS-07: Lógica de visualización de precios
+
     const tienePromo = p.EnPromocion === 1 && p.PrecioOferta > 0;
-    const precioHTML = tienePromo 
+    const precioHTML = tienePromo
       ? `<p class="precio">
-          <span class="oferta" style="color:red; font-weight:bold;">$${p.PrecioOferta}</span> 
-          <span class="original-tachado" style="text-decoration:line-through; font-size:0.8em; color:#888;">$${p.Precio}</span>
+          <span style="color:red; font-weight:bold;">$${p.PrecioOferta}</span>
+          <span style="text-decoration:line-through; font-size:0.8em; color:#888; margin-left:6px;">$${p.Precio}</span>
          </p>`
       : `<p class="precio">$${p.Precio}</p>`;
 
     const nombreImagen = p.Imagen ? p.Imagen.replace(/^(\/)?uploads\//, '') : '';
     const urlFinal = `${API_BASE}/uploads/${nombreImagen}`;
 
+    // Tallas como badges (soporta "M", "M/L", "S,M,L")
+    const tallas = p.Talla ? p.Talla.split(/[,\/]/).map(t => t.trim()).filter(Boolean) : [];
+    const tallasHTML = tallas.length > 0
+      ? `<div style="display:flex; gap:5px; flex-wrap:wrap; margin:6px 0;">
+          ${tallas.map(t => `
+            <span style="border:1px solid #d4a373; color:#d4a373;
+                         padding:2px 8px; border-radius:4px; font-size:0.75rem;">
+              ${t}
+            </span>`).join('')}
+         </div>`
+      : '';
+
+    // Colores como círculos
+    const coloresMap = {
+      'rojo':'#e63946','azul':'#457b9d','negro':'#111111','negra':'#111111',
+      'blanco':'#f1faee','blanca':'#f1faee','verde':'#2d6a4f','rosa':'#ff6b9d',
+      'gris':'#adb5bd','cafe':'#a0522d','beige':'#d4a373','morado':'#7b2d8b',
+      'naranja':'#f4a261','amarillo':'#e9c46a','azul marino':'#1d3557'
+    };
+    const colores = p.Color ? p.Color.split(',').map(c => c.trim()).filter(Boolean) : [];
+    const coloresHTML = colores.length > 0
+      ? `<div style="display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; align-items:center;">
+          ${colores.map(c => {
+            const hex = coloresMap[c.toLowerCase()] || '#888';
+            const borde = c.toLowerCase() === 'blanco' || c.toLowerCase() === 'blanca' ? '#ccc' : hex;
+            return `<span title="${c}" style="
+              width:16px; height:16px; border-radius:50%;
+              background:${hex}; border:2px solid ${borde};
+              display:inline-block; cursor:default;"></span>`;
+          }).join('')}
+         </div>`
+      : '';
+
     card.innerHTML = `
       ${tienePromo ? '<div class="badge-promo" style="position:absolute; background:red; color:white; padding:5px; border-radius:0 8px 8px 0;">OFERTA</div>' : ''}
-      <img src="${urlFinal}" alt="${p.Nombre}" style="width:100%; height:250px; object-fit:cover; border-radius: 8px;">
+      <img src="${urlFinal}" alt="${p.Nombre}"
+           style="width:100%; height:250px; object-fit:cover; border-radius:8px;"
+           onerror="this.src='https://via.placeholder.com/250x300?text=Sin+imagen'">
       <h3>${p.Nombre}</h3>
+      ${tallasHTML}
+      ${coloresHTML}
       ${precioHTML}
       <div>${renderEstrellas(p.Calificacion || 0)}</div>
       <button onclick="abrirModalProducto(${p.IdProducto})">Ver detalles</button>
@@ -582,7 +632,6 @@ async function handlePayment() {
   }
 }
 
-/* ---------------- Proceso de Finalización y Ubicación ---------------- */
 async function finalizarCompra() {
   if (carrito.length === 0) {
     alert('Tu carrito está vacío');
@@ -594,22 +643,44 @@ async function finalizarCompra() {
     return;
   }
 
-  // NUEVO: guardar carrito antes de salir a Stripe
+  // Guardamos el carrito por si hay que recuperar la sesión después del pago
   localStorage.setItem('carritoAntesPago', JSON.stringify(carrito));
 
   try {
     showToast("Obteniendo tu ubicación para la entrega...");
+    // Intentamos obtener GPS (lo ideal)
     const coords = await obtenerUbicacionCliente();
+    
+    // Guardamos en el objeto que usará handlePayment
     loggedUser.latitud = coords.lat;
     loggedUser.longitud = coords.lng;
+    loggedUser.direccionReferencia = null; // Prioridad al GPS
+
     handlePayment();
   } catch (error) {
-    console.warn("No se obtuvo la ubicación:", error);
-    if(confirm("No pudimos obtener tu ubicación GPS exacta. ¿Quieres continuar con la dirección de tu perfil?")) {
+    console.warn("Sin GPS:", error);
+
+    // PLAN B: Usar dirección de texto del perfil
+    const direccion = loggedUser.Direccion || loggedUser.direccion || '';
+    
+    if (direccion) {
+      showToast(`📍 Usando dirección de perfil: ${direccion}`);
+      loggedUser.latitud = null;
+      loggedUser.longitud = null;
+      loggedUser.direccionReferencia = direccion;
       handlePayment();
+    } else {
+      // PLAN C: Si no hay ni GPS ni Dirección en perfil
+      if (confirm("No pudimos obtener tu ubicación ni tienes una dirección guardada. ¿Continuar con el pago? (Deberás contactar al soporte para la entrega)")) {
+        loggedUser.latitud = null;
+        loggedUser.longitud = null;
+        loggedUser.direccionReferencia = "Sin dirección proporcionada";
+        handlePayment();
+      }
     }
   }
 }
+
 async function renderEntregasLogistica() {
   const container = el('adminOrdersList');
   if (!container) return;
@@ -721,10 +792,10 @@ function abrirModalProducto(id) {
   const controlesCompra = (loggedUser && loggedUser.role !== 'admin') ? `
     <div class="selection-group" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
       <label>Talla:</label>
-      <select id="modalTalla" class="modern-select">
-        <option value="M">Talla M</option>
-        <option value="L">Talla L</option>
-      </select>
+     <select id="modalTalla" class="modern-select">
+  ${(p.Talla ? p.Talla.split(/[,\/]/).map(t => t.trim()).filter(Boolean) : ['Única'])
+    .map(t => `<option value="${t}">${t}</option>`).join('')}
+</select>
       <label>Cantidad:</label>
       <input type="number" id="modalCantidad" value="1" min="1" max="${p.Stock}" class="modern-input">
       <button class="btn-add-modal" onclick="addToCartFromModal(${p.IdProducto})" style="width:100%; margin-top:10px;">
@@ -789,7 +860,7 @@ function addToCartFromModal(id) {
     return;
   }
 
-  // CORRECCIÓN: usar precio de oferta si está en promoción
+
   const precioFinal = (p.EnPromocion == 1 && p.PrecioOferta > 0) 
     ? p.PrecioOferta 
     : p.Precio;
@@ -817,72 +888,6 @@ function addToCartFromModal(id) {
 function cerrarModal() {
     document.getElementById('modalProducto').classList.add('hidden');
 }
-/* ---------------- Admin: Inventario ---------------- */
-const formProducto = el('formProducto');
-let editingId = null;
-
-formProducto.addEventListener('submit', async e => {
-  e.preventDefault();
-
-  // Captura de los valores de los inputs
-  const Nombre = el('nombre').value.trim();
-  const Talla = el('talla').value.trim();
-  const Categoria = el('categoria').value.trim();
-  const Stock = parseInt(el('stock').value);
-  const Precio = parseFloat(el('precio').value);
-  const Color = el('color').value.trim();
-  
-  
-  const EnPromocion = el('enPromocion').checked ? 1 : 0;
-  const PrecioOferta = parseFloat(el('precioOferta').value) || 0;
-  const FechaFinPromo = el('fechaFinPromo').value;
-
-  const ImagenFile = el('imagen').files[0]; 
-
-
-  const formData = new FormData();
-  formData.append('Nombre', Nombre);
-  formData.append('Talla', Talla);
-  formData.append('Categoria', Categoria);
-  formData.append('Stock', Stock);
-  formData.append('Precio', Precio);
-  formData.append('Color', Color);
-  
-  // CAMPOS DE PROMOCIÓN 
-  formData.append('EnPromocion', EnPromocion);
-  formData.append('PrecioOferta', PrecioOferta);
-  formData.append('FechaFinPromo', FechaFinPromo);
-  
-  if (ImagenFile) {
-      formData.append('Imagen', ImagenFile);
-  }
-
-  try {
-    const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `${API_BASE}/api/products/${editingId}` : `${API_BASE}/api/products`;
-
-    const res = await fetch(url, {
-      method: method,
-      body: formData
-    });
-
-    const data = await res.json();
-
-    if (data.ok) {
-      alert(editingId ? 'Producto actualizado' : 'Producto agregado con éxito');
-      formProducto.reset();
-      editingId = null; // Limpia dep ID después de guardar
-      await cargarProductos(); 
-      showAdminPanel(); 
-      showAdminSection('inventario');
-    } else {
-      alert('Error: ' + data.message);
-    }
-  } catch (err) {
-    console.error(err);
-    alert('Error al conectar con el servidor');
-  }
-});
 
 function renderAdminList(){
   const container=el('adminList'); container.innerHTML='';
@@ -897,24 +902,19 @@ function renderAdminList(){
   });
 }
 
-function editProducto(id){
-const p = productos.find(x => x.IdProducto === id);
-  el('nombre').value = p.Nombre;
-  el('talla').value = p.Talla;
-  el('categoria').value = p.Categoria;
-  el('stock').value = p.Stock;
-  el('precio').value = p.Precio;
-  el('color').value = p.Color;
-  el('enPromocion').checked = p.EnPromocion == 1;
-  el('precioOferta').value = p.PrecioOferta || '';
-  el('fechaFinPromo').value = p.FechaFinPromo ? p.FechaFinPromo.slice(0, 16) : '';
-    
+function editProducto(id) {
+    const p = productos.find(x => x.IdProducto === id);
+    el('nombre').value = p.Nombre;
+    el('talla').value = p.Talla;
+    el('categoria').value = p.Categoria;
+    el('stock').value = p.Stock;
+    el('precio').value = p.Precio;
+    el('color').value = p.Color;
 
- const imgPreview = el('imgPreview'); 
-    if(imgPreview) imgPreview.src = `${API_BASE}/uploads/${p.Imagen}`;
-    
-    editingId = id;
+    const imgPreview = el('imgPreview');
+    if (imgPreview) imgPreview.src = `${API_BASE}/uploads/${p.Imagen}`;
 
+    window.setEditingId(id);
 }
 
 
@@ -927,12 +927,11 @@ async function deleteProducto(id) {
     if (res.ok && data.ok) { 
       alert(' Producto eliminado correctamente.');
       
-      await cargarProductos(); // Refresca la lista global
-      showAdminPanel();
-      showAdminSection('inventario');
+     await cargarProductos();
+    showAdminSection('inventario');
     } else {
       const msgError = data.message && data.message.includes('foreign key') 
-        ? "⚠️ No se puede eliminar: Este producto tiene pedidos asociados. Para no perder el historial de ventas, te sugerimos solo agotar el stock."
+        ? " No se puede eliminar: Este producto tiene pedidos asociados. Para no perder el historial de ventas, te sugerimos solo agotar el stock."
         : (data.message || 'Error desconocido');
 
       alert(msgError);
@@ -974,7 +973,7 @@ if (formProveedor) {
       if (res.ok && data.ok) {
         alert(' Proveedor guardado correctamente');
         formProveedor.reset();
-        await renderProveedores();
+         renderProveedores();
       } else {
         alert(' Error: ' + (data.message || 'Error al guardar'));
       }
@@ -1328,7 +1327,68 @@ async function init() {
   console.log("Aplicación inicializada correctamente.");
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+
+    let editingId = null;
+    const formProducto = el('formProducto');
+    if (!formProducto) return;
+
+    formProducto.addEventListener('submit', async e => {
+        e.preventDefault();
+
+        const Nombre = el('nombre').value.trim();
+        const Talla = el('talla').value.trim();
+        const Categoria = el('categoria').value.trim();
+        const Stock = parseInt(el('stock').value);
+        const Precio = parseFloat(el('precio').value);
+        const Color = el('color').value.trim();
+        const EnPromocion = 0;
+        const PrecioOferta = 0;
+        const FechaFinPromo = '';  
+        const ImagenFile = el('imagen').files[0];
+
+        const formData = new FormData();
+        formData.append('Nombre', Nombre);
+        formData.append('Talla', Talla);
+        formData.append('Categoria', Categoria);
+        formData.append('Stock', Stock);
+        formData.append('Precio', Precio);
+        formData.append('Color', Color);
+        formData.append('EnPromocion', EnPromocion);
+        formData.append('PrecioOferta', PrecioOferta);
+        formData.append('FechaFinPromo', FechaFinPromo);
+        if (ImagenFile) formData.append('Imagen', ImagenFile);
+
+        try {
+            const method = editingId ? 'PUT' : 'POST';
+            const url = editingId
+                ? `${API_BASE}/api/products/${editingId}`
+                : `${API_BASE}/api/products`;
+
+            const res = await fetch(url, { method, body: formData });
+            const data = await res.json();
+
+            if (data.ok) {
+            alert(editingId ? 'Producto actualizado' : ' Producto agregado con éxito');
+            formProducto.reset();
+            editingId = null;
+            await cargarProductos();
+            showAdminSection('inventario');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error al conectar con el servidor');
+        }
+    });
+
+    
+    window.setEditingId = function(id) {
+        editingId = id;
+    }
+});
 
 // validación
 function validarAccesoDetalle(id) {
@@ -1604,7 +1664,7 @@ async function actualizarEstadoPedido(idPedido, nuevoEstado, idCliente) {
             showToast(`✅ Orden #${idPedido} actualizada a: ${nombreEstado}`);
 
             // Refrescamos toda la vista del admin para ver los cambios
-            await renderEntregasLogistica(); 
+           await showAdminOrders(); 
             renderEstadisticas(); 
         } else {
             alert("❌ Error: " + (data.message || "No se pudo actualizar."));
@@ -1725,11 +1785,14 @@ setInterval(cargarNotificaciones, 60000);
 
 // Abrir el modal y llenar el selector de productos
 async function abrirModalAjusteStock() {
-    const res = await fetch(`${API_BASE}/api/products`); // Ajusta a tu ruta de productos
-    const productos = await res.json();
+    const res = await fetch(`${API_BASE}/api/products`);
+    const data = await res.json();
+    const listaProductos = data.products || data;
     
     const select = document.getElementById('selectProductoStock');
-    select.innerHTML = productos.map(p => `<option value="${p.IdProducto}">${p.Nombre} (Stock actual: ${p.Stock})</option>`).join('');
+    select.innerHTML = listaProductos.map(p =>
+        `<option value="${p.IdProducto}">${p.Nombre} (Stock actual: ${p.Stock})</option>`
+    ).join('');
     
     document.getElementById('modalAjusteStock').classList.remove('hidden');
 }
@@ -1737,7 +1800,7 @@ async function abrirModalAjusteStock() {
 async function confirmarAjusteStock() {
     const idProducto = document.getElementById('selectProductoStock').value;
     const cantidadNueva = document.getElementById('inputNuevaCantidad').value;
-
+    
     if (!cantidadNueva || cantidadNueva < 0) return alert("Ingresa una cantidad válida");
 
     try {
@@ -1746,26 +1809,24 @@ async function confirmarAjusteStock() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idProducto, cantidadNueva })
         });
-
         const data = await res.json();
         if (data.ok) {
-            alert("✅ Stock actualizado exitosamente");
+            alert(" Stock actualizado exitosamente");
             document.getElementById('modalAjusteStock').classList.add('hidden');
-            
-            // RE-RENDERIZADO: Esto es lo que actualiza la pantalla del admin
-            await cargarProductos(); // Recarga los datos del servidor
-            renderAdminList();       // Actualiza la lista simple
-            renderCatalogAdmin();    // Actualiza la lista con fotos
+            await cargarProductos();
+            renderAdminList();
+            renderCatalogAdmin();
         }
     } catch (err) {
         console.error("Error al ajustar stock:", err);
         alert("Hubo un error al conectar con el servidor.");
     }
 }
+
 function resetFormProducto() {
-  el('formProducto').reset();
-  editingId = null;
-  el('idProductoEdit').value = '';
+    el('formProducto').reset();
+    window.setEditingId(null);
+    el('idProductoEdit').value = '';
 }
 
 // ============ SISTEMA DE OFERTAS ADMIN ============
@@ -1832,8 +1893,26 @@ async function guardarOferta() {
   const fechaFin = el('ofertaFechaFin').value;
   const fechaInicio = el('ofertaFechaInicio').value;
 
-  if (!precioOferta || precioOferta <= 0) return alert('Ingresa un precio de oferta válido');
-  if (!fechaFin) return alert('Ingresa la fecha de fin de la promoción');
+  // VALIDACIONES DE FECHA
+  const ahora = new Date();
+  const inicio = fechaInicio ? new Date(fechaInicio) : null;
+  const fin = new Date(fechaFin);
+
+  if (!precioOferta || precioOferta <= 0) {
+    return showToast('Ingresa un precio de oferta válido');
+  }
+  if (!fechaFin) {
+    return showToast('Ingresa la fecha de fin de la promoción');
+  }
+  if (fin <= ahora) {
+    return showToast('La fecha de fin no puede ser en el pasado');
+  }
+  if (inicio && inicio <= ahora) {
+    return showToast('La fecha de inicio no puede ser en el pasado');
+  }
+  if (inicio && fin <= inicio) {
+    return showToast('La fecha de fin debe ser mayor que la fecha de inicio');
+  }
 
   try {
     const formData = new FormData();

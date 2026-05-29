@@ -5,7 +5,7 @@
 const pool = require('../bd');
 
 /**
- * 1. Obtener historial de todas las ventas (Para el Mapa y Panel Admin)
+ *  Obtener historial de todas las ventas (Para el Mapa y Panel Admin)
  */
 async function getAllSales(req, res) {
     try {
@@ -24,7 +24,7 @@ async function getAllSales(req, res) {
 }
 
 /**
- * 2. Obtener pedidos de un cliente específico (Vista "Mis Pedidos")
+ * Obtener pedidos de un cliente específico (Vista "Mis Pedidos")
  */
 async function getSalesByUser(req, res) {
     const { idCliente } = req.params; 
@@ -41,7 +41,7 @@ async function getSalesByUser(req, res) {
 }
 
 /**
- * 3. Obtener detalle de productos de una venta específica
+ * Obtener detalle de productos de una venta específica
  */
 async function getSaleDetail(req, res) {
     const { id } = req.params;
@@ -70,7 +70,7 @@ async function getSaleDetail(req, res) {
 }
 
 /**
- * 4. Crear una venta manualmente
+ *  Crear una venta manualmente
  */
 async function createSale(req, res) {
     const { IdCliente, productos } = req.body;
@@ -88,7 +88,7 @@ async function createSale(req, res) {
 }
 
 /**
- * 5. Lógica interna con Transacciones SQL y Notificación al Admin
+ * Lógica interna con Transacciones SQL y Notificación al Admin
  */
 async function processSaleInternally(IdCliente, productos, latitud = null, longitud = null) {
     let connection;
@@ -153,7 +153,7 @@ async function processSaleInternally(IdCliente, productos, latitud = null, longi
 }
 
 /**
- * 6. Actualizar estado de envío (Admin) con Notificación al Cliente
+ *  Actualizar estado de envío (Admin) con Notificación al Cliente
  */
 async function updateStatus(req, res) {
     const { id } = req.params;
@@ -167,7 +167,7 @@ async function updateStatus(req, res) {
         
         if (result.affectedRows > 0) {
             // Diccionario de estados para el mensaje
-            const estados = { "1": "Pendiente", "2": "En Camino", "3": "Entregado" };
+            const estados = { "1": "Pagado", "2": "Preparando", "3": "En Camino", "4": "Entregado" };
             const textoEstado = estados[nuevoEstado] || "Actualizado";
 
             // NOTIFICACIÓN AL CLIENTE
@@ -186,9 +186,7 @@ async function updateStatus(req, res) {
     }
 }
 
-/**
- * 7. Ajuste manual de inventario (Administrador)
- */
+
 async function adjustStockManual(req, res) {
     const { idProducto, cantidadNueva } = req.body;
     try {
@@ -215,5 +213,5 @@ module.exports = {
     createSale,
     processSaleInternally,
     updateStatus,
-    adjustStockManual // No olvides exportar la nueva función
+    adjustStockManual
 };
