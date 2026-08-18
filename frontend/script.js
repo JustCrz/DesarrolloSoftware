@@ -1,13 +1,13 @@
-//const API_BASE = 'http://localhost:3000';
-const API_BASE = 'https://desarrollosoftware.onrender.com';
-const stripe = Stripe('pk_test_51T9FMCAuz5OrtKFT0wnEX0niDHjIfkaXG6FnIER897RI9Xg30mYG14QJHc4S8B8DBu2UgQnpnwTjhxJqPyuMu9mO00yFEC18Tn');
-//const stripe = Stripe('pk_test_51T8pDsFOBjDn2DDlWx88AjYqbf1NHYmfgppF5i4eIkJW65P70KQyD2INWT5YQo5FEXFDsOsFGOnBDvggkXp3E4vM00wyBe4HmE');
+const API_BASE = 'http://localhost:3000';
+//const API_BASE = 'https://desarrollosoftware.onrender.com';
+//const stripe = Stripe('pk_test_51T9FMCAuz5OrtKFT0wnEX0niDHjIfkaXG6FnIER897RI9Xg30mYG14QJHc4S8B8DBu2UgQnpnwTjhxJqPyuMu9mO00yFEC18Tn');
+const stripe = Stripe('pk_test_51T8pDsFOBjDn2DDlWx88AjYqbf1NHYmfgppF5i4eIkJW65P70KQyD2INWT5YQo5FEXFDsOsFGOnBDvggkXp3E4vM00wyBe4HmE');
 /* ---------------- Datos locales ---------------- */
 let productos = [];
 let proveedores = [];
 let ventas = [];
-let carrito = [];
-let loggedUser = null;
+ let carrito = [];
+ let loggedUser = null;
 let mapaAdmin = null; 
 let marcadorAdmin = null;
 let productoSeleccionadoOferta = null;
@@ -50,6 +50,7 @@ function showAdminPanel() {
   show('adminPanel');
   showAdminSection('inventario');
 }
+
 
 function showAdminSection(section) {
   document.querySelectorAll('.adminSection').forEach(s => s.classList.add('hidden'));
@@ -928,7 +929,8 @@ async function deleteProducto(id) {
       alert(' Producto eliminado correctamente.');
       
      await cargarProductos();
-    showAdminSection('inventario');
+     show('adminPanel');
+     showAdminSection('inventario');
     } else {
       const msgError = data.message && data.message.includes('foreign key') 
         ? " No se puede eliminar: Este producto tiene pedidos asociados. Para no perder el historial de ventas, te sugerimos solo agotar el stock."
@@ -1221,7 +1223,6 @@ async function cargarProductos() {
 }
 
 
-showLanding();
 async function cargarMasVendido() {
   try {
     const res = await fetch(`${API_BASE}/api/reports/top-product`);
@@ -1323,7 +1324,6 @@ async function init() {
   await cargarMasVendido();
   await renderBestSellers();
   renderEstadisticas();
-  showLanding();
   console.log("Aplicación inicializada correctamente.");
 }
 
@@ -1369,11 +1369,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(url, { method, body: formData });
             const data = await res.json();
 
-            if (data.ok) {
+           if (data.ok) {
             alert(editingId ? 'Producto actualizado' : ' Producto agregado con éxito');
-            formProducto.reset();
+             formProducto.reset();
             editingId = null;
             await cargarProductos();
+            show('adminPanel');
             showAdminSection('inventario');
             } else {
                 alert('Error: ' + data.message);
@@ -1394,9 +1395,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function validarAccesoDetalle(id) {
     if (!loggedUser) {
         alert("Para ver detalles y comprar, por favor inicia sesión.");
-        showLogin(); // Muestra el formulario de login
+        showLogin(); 
     } else {
-        abrirModalProducto(id); // Si está logueado, abre el modal normal
+        abrirModalProducto(id); 
     }
 }
 
